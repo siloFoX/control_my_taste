@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Credentials & Tokens (민감 정보)
+credentials.json
+token.json
+
+# Build output
+dist/
+out/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data files (선택적으로 제외할 수 있음)
+# data/
