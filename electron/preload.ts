@@ -12,4 +12,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('music:updateRating', youtubeId, rating),
   deleteMusic: (youtubeId: string) =>
     ipcRenderer.invoke('music:delete', youtubeId),
+
+  // 블랙리스트 (휴지통)
+  loadBlacklist: () => ipcRenderer.invoke('blacklist:load'),
+  restoreFromBlacklist: (youtubeId: string) =>
+    ipcRenderer.invoke('blacklist:restore', youtubeId),
 });

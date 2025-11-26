@@ -226,7 +226,8 @@
       "channelTitle": "Bob and Doug McKenzie - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/QL0120iJhrA/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:47.938Z",
-      "comments": []
+      "comments": [],
+      "rating": 2
     },
     {
       "id": "HObObM-1zDM",
@@ -496,7 +497,8 @@
       "channelTitle": "Muse - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/fsB1OzYy9uI/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:48.504Z",
-      "comments": []
+      "comments": [],
+      "rating": 4
     },
     {
       "id": "4EQj97u6Cu4",
@@ -893,7 +895,16 @@
       "thumbnailUrl": "https://i.ytimg.com/vi/DlFXDl_ROAM/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:48.504Z",
       "comments": []
+    },
+    {
+      "id": "qpll1TRVFFI",
+      "youtubeId": "qpll1TRVFFI",
+      "title": "원피스)해군 망한 이유",
+      "channelTitle": "폐급선원 쿠비",
+      "thumbnailUrl": "https://i.ytimg.com/vi/qpll1TRVFFI/mqdefault.jpg",
+      "addedAt": "2025-11-26T01:07:10.182Z",
+      "comments": []
     }
   ],
-  "lastSync": "2025-11-26T00:56:48.505Z"
+  "lastSync": "2025-11-26T01:07:10.804Z"
 }

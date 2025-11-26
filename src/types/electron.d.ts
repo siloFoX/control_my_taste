@@ -14,6 +14,11 @@ export interface MusicData {
   lastSync: string;
 }
 
+export interface BlacklistItem {
+  youtubeId: string;
+  deletedAt: string;
+}
+
 export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -28,6 +33,8 @@ declare global {
       loadMusic: () => Promise<APIResponse<MusicData>>;
       updateRating: (youtubeId: string, rating: number) => Promise<APIResponse>;
       deleteMusic: (youtubeId: string) => Promise<APIResponse>;
+      loadBlacklist: () => Promise<APIResponse<BlacklistItem[]>>;
+      restoreFromBlacklist: (youtubeId: string) => Promise<APIResponse>;
     };
   }
 }

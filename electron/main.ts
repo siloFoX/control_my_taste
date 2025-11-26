@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchLikedVideos, isAuthenticated } from './services/youtube.js';
-import { loadMusicData, saveMusicData, loadBlacklist, addToBlacklist, mergeVideos } from './services/storage.js';
+import { loadMusicData, saveMusicData, loadBlacklist, saveBlacklist, addToBlacklist, mergeVideos } from './services/storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -112,6 +112,26 @@ ipcMain.handle('music:delete', async (_event, youtubeId: string) => {
     musicData.items = musicData.items.filter(v => v.youtubeId !== youtubeId);
     saveMusicData(musicData);
     addToBlacklist(youtubeId);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('blacklist:load', async () => {
+  try {
+    const data = loadBlacklist();
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('blacklist:restore', async (_event, youtubeId: string) => {
+  try {
+    const blacklist = loadBlacklist();
+    const updated = blacklist.filter(item => item.youtubeId !== youtubeId);
+    saveBlacklist(updated);
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };
