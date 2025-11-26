@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import MusicList from './pages/MusicList'
 import Evaluate from './pages/Evaluate'
 import Trash from './pages/Trash'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route index element={<MusicList />} />
           <Route path="evaluate" element={<Evaluate />} />
           <Route path="trash" element={<Trash />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

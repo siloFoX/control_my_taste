@@ -1,8 +1,9 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { fetchLikedVideos, isAuthenticated } from './services/youtube.js';
-import { loadMusicData, saveMusicData, loadBlacklist, saveBlacklist, addToBlacklist, mergeVideos } from './services/storage.js';
+import { fetchAllLikedVideos, isAuthenticated } from './services/youtube.js';
+import { loadMusicData, saveMusicData, loadBlacklist, saveBlacklist, addToBlacklist, mergeVideos, loadSettings, saveSettings, deleteAllUnsynced, keepItem } from './services/storage.js';
+import type { Settings } from './services/storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,22 +64,60 @@ ipcMain.handle('youtube:sync', async () => {
       return { success: false, error: 'Not authenticated' };
     }
 
-    const newVideos = await fetchLikedVideos(100);
+    const newVideos = await fetchAllLikedVideos();
     const musicData = loadMusicData();
     const blacklist = loadBlacklist();
 
-    const mergedItems = mergeVideos(musicData.items, newVideos, blacklist);
+    // 동기화: unsynced 항목 감지 (synced: false로 표시)
+    const result = mergeVideos(musicData.items, newVideos, blacklist);
 
     const updatedData = {
-      items: mergedItems,
+      items: result.items,
       lastSync: new Date().toISOString(),
     };
 
     saveMusicData(updatedData);
 
-    return { success: true, data: updatedData };
+    // unsynced 항목이 있으면 다이얼로그 표시 필요
+    return {
+      success: true,
+      data: updatedData,
+      added: result.added,
+      unsynced: result.unsynced,
+      needsConfirmation: result.unsynced.length > 0,
+      totalFetched: newVideos.length,
+    };
   } catch (error) {
     console.error('Sync error:', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+// 일괄 처리 확정
+ipcMain.handle('youtube:confirmSync', async (_event, action: 'keep_all' | 'delete_all' | 'individual') => {
+  try {
+    let musicData = loadMusicData();
+
+    if (action === 'keep_all') {
+      // 모든 unsynced 항목을 synced: true로 변경
+      musicData = {
+        ...musicData,
+        items: musicData.items.map(item => ({ ...item, synced: true })),
+      };
+    } else if (action === 'delete_all') {
+      // 모든 unsynced 항목 삭제
+      musicData = deleteAllUnsynced(musicData);
+    }
+    // 'individual'인 경우 아무것도 안 함 (개별 처리는 목록에서)
+
+    saveMusicData(musicData);
+
+    return {
+      success: true,
+      data: musicData,
+    };
+  } catch (error) {
+    console.error('Confirm sync error:', error);
     return { success: false, error: String(error) };
   }
 });
@@ -112,6 +151,18 @@ ipcMain.handle('music:delete', async (_event, youtubeId: string) => {
     musicData.items = musicData.items.filter(v => v.youtubeId !== youtubeId);
     saveMusicData(musicData);
     addToBlacklist(youtubeId);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+// 개별 항목 남기기 (synced: true로 변경)
+ipcMain.handle('music:keep', async (_event, youtubeId: string) => {
+  try {
+    const musicData = loadMusicData();
+    const updatedData = keepItem(musicData, youtubeId);
+    saveMusicData(updatedData);
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };
@@ -160,6 +211,25 @@ ipcMain.handle('music:deleteComment', async (_event, youtubeId: string, commentI
       item.comments.splice(commentIndex, 1);
       saveMusicData(musicData);
     }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+// Settings handlers
+ipcMain.handle('settings:load', async () => {
+  try {
+    const settings = loadSettings();
+    return { success: true, data: settings };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('settings:save', async (_event, settings: Settings) => {
+  try {
+    saveSettings(settings);
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };

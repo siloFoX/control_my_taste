@@ -145,3 +145,16 @@ Cannot use import statement outside a module
 - `credentials.json`, `token.json`은 절대 커밋하지 않음
 - 민감 정보는 `.gitignore`에 포함됨
 - Electron 앱은 **Windows PowerShell에서 실행** 권장 (WSL2 X)
+
+## 작업 프로세스
+
+### 빌드/테스트
+- 빌드 및 실행 테스트는 Claude가 하지 않고 **사용자가 직접 실행**
+- 테스트 후 피드백을 받아 수정
+
+### 새 기능 요청 시 작업 순서
+1. 사용자 피드백/요청 수신
+2. **이해한 내용 정리하여 사용자에게 확인 요청**
+3. 사용자 승인 후 코딩 시작
+4. 기능 구현 중에는 끊지 않고 완료까지 진행
+5. 사용자가 직접 테스트 후 피드백 반영

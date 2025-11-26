@@ -19,6 +19,7 @@ export interface VideoItem {
   addedAt: string;
   rating?: number;
   comments: string[];
+  synced: boolean;
 }
 
 function getOAuth2Client() {
@@ -39,7 +40,7 @@ function getOAuth2Client() {
   return oauth2Client;
 }
 
-export async function fetchLikedVideos(maxResults: number = 50): Promise<VideoItem[]> {
+export async function fetchAllLikedVideos(): Promise<VideoItem[]> {
   const auth = getOAuth2Client();
   const youtube = google.youtube({ version: 'v3', auth });
 
@@ -50,7 +51,7 @@ export async function fetchLikedVideos(maxResults: number = 50): Promise<VideoIt
     const response = await youtube.videos.list({
       part: ['snippet', 'contentDetails'],
       myRating: 'like',
-      maxResults: Math.min(maxResults - allVideos.length, 50),
+      maxResults: 50, // API 최대값
       pageToken,
     });
 
@@ -66,12 +67,13 @@ export async function fetchLikedVideos(maxResults: number = 50): Promise<VideoIt
           thumbnailUrl: video.snippet.thumbnails?.medium?.url || '',
           addedAt: new Date().toISOString(),
           comments: [],
+          synced: true,
         });
       }
     }
 
     pageToken = response.data.nextPageToken || undefined;
-  } while (pageToken && allVideos.length < maxResults);
+  } while (pageToken); // 제한 없이 모든 페이지 가져오기
 
   return allVideos;
 }

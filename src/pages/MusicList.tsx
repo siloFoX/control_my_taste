@@ -1,6 +1,8 @@
-import { Search, Star, Trash2, ExternalLink, MessageSquare, X, Plus } from 'lucide-react'
+import { Search, Star, Trash2, ExternalLink, MessageSquare, X, Plus, RefreshCw, Unlink, Check } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { VideoItem } from '../types/electron'
+
+const ITEMS_PER_PAGE = 20
 
 function MusicList() {
   const [items, setItems] = useState<VideoItem[]>([])
@@ -9,6 +11,8 @@ function MusicList() {
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
   const [hoverRating, setHoverRating] = useState<{ id: string; rating: number } | null>(null)
+  const [syncActionMenu, setSyncActionMenu] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const loadData = async () => {
     try {
@@ -27,13 +31,36 @@ function MusicList() {
     loadData()
   }, [])
 
-  const handleDelete = async (youtubeId: string) => {
-    if (!confirm('이 항목을 삭제하시겠습니까?')) return
+  // 메뉴 바깥 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = () => setSyncActionMenu(null)
+    if (syncActionMenu) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [syncActionMenu])
 
+  const handleDelete = async (youtubeId: string) => {
     const result = await window.electronAPI.deleteMusic(youtubeId)
     if (result.success) {
       setItems(items.filter(item => item.youtubeId !== youtubeId))
     }
+    setSyncActionMenu(null)
+  }
+
+  const handleKeep = async (youtubeId: string) => {
+    const result = await window.electronAPI.keepMusic(youtubeId)
+    if (result.success) {
+      setItems(items.map(item =>
+        item.youtubeId === youtubeId ? { ...item, synced: true } : item
+      ))
+    }
+    setSyncActionMenu(null)
+  }
+
+  const handleDeleteWithConfirm = async (youtubeId: string) => {
+    if (!confirm('이 항목을 삭제하시겠습니까?')) return
+    await handleDelete(youtubeId)
   }
 
   const handleRating = async (youtubeId: string, rating: number) => {
@@ -75,6 +102,16 @@ function MusicList() {
     item.channelTitle.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // 페이징 계산
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+
+  // 검색어 변경 시 첫 페이지로
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
   const openYoutube = (youtubeId: string) => {
     window.open(`https://www.youtube.com/watch?v=${youtubeId}`, '_blank')
   }
@@ -111,7 +148,7 @@ function MusicList() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {filteredItems.map((item) => (
+          {paginatedItems.map((item) => (
             <div
               key={item.youtubeId}
               className="bg-gray-800 rounded-lg overflow-hidden"
@@ -171,6 +208,41 @@ function MusicList() {
 
                 {/* 액션 버튼 */}
                 <div className="flex items-center gap-2">
+                  {/* 동기화 상태 아이콘 */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setSyncActionMenu(syncActionMenu === item.youtubeId ? null : item.youtubeId)}
+                      className={`p-2 transition-colors ${
+                        item.synced === false
+                          ? 'text-orange-400 hover:text-orange-300'
+                          : 'text-green-400'
+                      }`}
+                      title={item.synced === false ? '동기화 안됨 (클릭하여 처리)' : '동기화됨'}
+                    >
+                      {item.synced === false ? <Unlink size={20} /> : <RefreshCw size={20} />}
+                    </button>
+
+                    {/* 동기화 안됨 항목 액션 메뉴 */}
+                    {syncActionMenu === item.youtubeId && item.synced === false && (
+                      <div className="absolute right-0 top-full mt-1 bg-gray-700 rounded-lg shadow-lg z-10 min-w-[160px]">
+                        <button
+                          onClick={() => handleKeep(item.youtubeId)}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-600 rounded-t-lg transition-colors"
+                        >
+                          <Check size={16} className="text-green-400" />
+                          남기기
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.youtubeId)}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-600 rounded-b-lg transition-colors"
+                        >
+                          <Trash2 size={16} className="text-red-400" />
+                          휴지통으로
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <button
                     onClick={() => setExpandedItem(expandedItem === item.youtubeId ? null : item.youtubeId)}
                     className={`p-2 transition-colors ${
@@ -193,7 +265,7 @@ function MusicList() {
                     <ExternalLink size={20} />
                   </button>
                   <button
-                    onClick={() => handleDelete(item.youtubeId)}
+                    onClick={() => handleDeleteWithConfirm(item.youtubeId)}
                     className="p-2 text-gray-400 hover:text-red-400 transition-colors"
                     title="삭제"
                   >
@@ -248,6 +320,55 @@ function MusicList() {
               )}
             </div>
           ))}
+
+          {/* 페이지 네비게이션 */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                이전
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    // 현재 페이지 주변 2개씩 + 첫/끝 페이지 표시
+                    if (page === 1 || page === totalPages) return true
+                    if (Math.abs(page - currentPage) <= 2) return true
+                    return false
+                  })
+                  .map((page, index, arr) => (
+                    <span key={page} className="flex items-center">
+                      {/* 생략 표시 */}
+                      {index > 0 && arr[index - 1] !== page - 1 && (
+                        <span className="px-2 text-gray-500">...</span>
+                      )}
+                      <button
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded transition-colors ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 hover:bg-gray-600'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </span>
+                  ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                다음
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
