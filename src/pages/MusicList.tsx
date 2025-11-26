@@ -1,8 +1,12 @@
-import { Search, Star, Trash2, ExternalLink, MessageSquare, X, Plus, RefreshCw, Unlink, Check } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Search, Star, Trash2, Info, MessageSquare, X, Plus, RefreshCw, Unlink, Check, Copy, ExternalLink } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type { VideoItem } from '../types/electron'
 
-const ITEMS_PER_PAGE = 20
+// 아이템 카드 높이 (p-4 패딩 + h-20 썸네일 + gap-4)
+const ITEM_HEIGHT = 112
+// 헤더(56) + 페이지네이션(56) + 여백 + 여유분
+const FIXED_HEIGHT = 260
 
 function MusicList() {
   const [items, setItems] = useState<VideoItem[]>([])
@@ -12,7 +16,38 @@ function MusicList() {
   const [newComment, setNewComment] = useState('')
   const [hoverRating, setHoverRating] = useState<{ id: string; rating: number } | null>(null)
   const [syncActionMenu, setSyncActionMenu] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [detailModal, setDetailModal] = useState<VideoItem | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // URL에서 페이지 번호 읽기
+  const currentPage = parseInt(searchParams.get('page') || '1', 10)
+  const setCurrentPage = (page: number | ((prev: number) => number)) => {
+    const newPage = typeof page === 'function' ? page(currentPage) : page
+    setSearchParams(prev => {
+      if (newPage === 1) {
+        prev.delete('page')
+      } else {
+        prev.set('page', String(newPage))
+      }
+      return prev
+    }, { replace: true })
+  }
+
+  // 창 크기에 맞춰 페이지당 아이템 수 계산
+  const calculateItemsPerPage = useCallback(() => {
+    const availableHeight = window.innerHeight - FIXED_HEIGHT
+    const count = Math.max(1, Math.floor(availableHeight / ITEM_HEIGHT))
+    setItemsPerPage(count)
+  }, [])
+
+  useEffect(() => {
+    calculateItemsPerPage()
+    window.addEventListener('resize', calculateItemsPerPage)
+    return () => window.removeEventListener('resize', calculateItemsPerPage)
+  }, [calculateItemsPerPage])
 
   const loadData = async () => {
     try {
@@ -103,17 +138,53 @@ function MusicList() {
   )
 
   // 페이징 계산
-  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage)
 
-  // 검색어 변경 시 첫 페이지로
+  // 검색어 변경 또는 페이지당 아이템 수 변경 시 페이지 조정
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm])
 
+  // 페이지 수가 변경되어 현재 페이지가 범위를 벗어나면 조정
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages)
+    }
+  }, [totalPages, currentPage])
+
   const openYoutube = (youtubeId: string) => {
     window.open(`https://www.youtube.com/watch?v=${youtubeId}`, '_blank')
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  // ISO 8601 duration을 읽기 쉬운 형식으로 변환 (PT5M47S -> 5:47)
+  const formatDuration = (duration?: string) => {
+    if (!duration) return null
+    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+    if (!match) return duration
+    const hours = match[1] ? parseInt(match[1]) : 0
+    const minutes = match[2] ? parseInt(match[2]) : 0
+    const seconds = match[3] ? parseInt(match[3]) : 0
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  // Wikipedia URL에서 토픽 이름 추출
+  const formatTopic = (url: string) => {
+    const match = url.match(/\/wiki\/(.+)$/)
+    if (match) {
+      return decodeURIComponent(match[1].replace(/_/g, ' '))
+    }
+    return url
   }
 
   if (loading) {
@@ -258,11 +329,11 @@ function MusicList() {
                     )}
                   </button>
                   <button
-                    onClick={() => openYoutube(item.youtubeId)}
+                    onClick={() => setDetailModal(item)}
                     className="p-2 text-gray-400 hover:text-blue-400 transition-colors"
-                    title="YouTube에서 열기"
+                    title="상세 정보"
                   >
-                    <ExternalLink size={20} />
+                    <Info size={20} />
                   </button>
                   <button
                     onClick={() => handleDeleteWithConfirm(item.youtubeId)}
@@ -369,6 +440,114 @@ function MusicList() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 상세 정보 모달 */}
+      {detailModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setDetailModal(null)}
+        >
+          <div
+            className="bg-gray-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 썸네일 헤더 */}
+            <div className="relative">
+              <img
+                src={detailModal.thumbnailUrl || 'https://via.placeholder.com/480x360?text=No+Image'}
+                alt={detailModal.title}
+                className="w-full aspect-video object-cover rounded-t-xl"
+              />
+              <button
+                onClick={() => setDetailModal(null)}
+                className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+              {/* 재생 시간 뱃지 */}
+              {detailModal.duration && (
+                <span className="absolute bottom-3 right-3 px-2 py-1 bg-black/80 rounded text-sm font-medium">
+                  {formatDuration(detailModal.duration)}
+                </span>
+              )}
+            </div>
+
+            {/* 콘텐츠 */}
+            <div className="p-5">
+              {/* 제목 */}
+              <h3 className="text-xl font-bold mb-1 leading-tight">{detailModal.title}</h3>
+              {/* 채널명 */}
+              <p className="text-gray-400 mb-4">{detailModal.channelTitle}</p>
+
+              {/* YouTube 링크 */}
+              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-700/50 rounded-lg">
+                <ExternalLink size={18} className="text-gray-400 flex-shrink-0" />
+                <a
+                  href={`https://www.youtube.com/watch?v=${detailModal.youtubeId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 truncate flex-1 text-sm"
+                >
+                  https://www.youtube.com/watch?v={detailModal.youtubeId}
+                </a>
+                <button
+                  onClick={() => copyToClipboard(`https://www.youtube.com/watch?v=${detailModal.youtubeId}`)}
+                  className={`p-2 rounded transition-colors flex-shrink-0 ${
+                    copied ? 'text-green-400' : 'text-gray-400 hover:text-white hover:bg-gray-600'
+                  }`}
+                  title="링크 복사"
+                >
+                  {copied ? <Check size={18} /> : <Copy size={18} />}
+                </button>
+              </div>
+
+              {/* 토픽 */}
+              {detailModal.topics && detailModal.topics.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-400 mb-2">토픽</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {detailModal.topics.map((topic, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full text-sm"
+                      >
+                        {formatTopic(topic)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 태그 */}
+              {detailModal.tags && detailModal.tags.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-400 mb-2">태그</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {detailModal.tags.slice(0, 15).map((tag, index) => (
+                      <span
+                        key={index}
+                        className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-sm"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                    {detailModal.tags.length > 15 && (
+                      <span className="px-2 py-1 text-gray-500 text-sm">
+                        +{detailModal.tags.length - 15}개
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 정보 없음 */}
+              {!detailModal.topics?.length && !detailModal.tags?.length && (
+                <p className="text-gray-500 text-sm">추가 정보 없음</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

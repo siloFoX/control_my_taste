@@ -10,15 +10,18 @@ Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 - [x] 프로젝트 기본 구조 설정 (Electron + React + TypeScript + Vite)
 - [x] Tailwind CSS 설정
 - [x] 기본 UI 레이아웃 구현 (사이드바 + 메인 컨텐츠)
-- [x] 라우팅 설정 (/, /evaluate, /trash)
+- [x] 라우팅 설정 (/, /evaluate, /trash, /settings)
 - [x] ES Module 호환성 문제 해결
 - [x] YouTube Data API 연동 (OAuth 인증)
-- [x] 음악 목록 동기화 기능 구현
-- [x] 음악 목록 페이지 (썸네일, 별점, 검색, 삭제, 코멘트)
+- [x] 음악 목록 동기화 기능 구현 (playlistItems.list 방식, 999개 제한 해제)
+- [x] 음악 목록 페이지 (썸네일, 별점, 검색, 삭제, 코멘트, 페이징)
 - [x] 평가하기 페이지 (랜덤 선택, 별점 + 코멘트)
 - [x] 휴지통 페이지 (블랙리스트 확인/복구)
+- [x] 설정 페이지 (좋아요 해제 항목 처리 설정)
 - [x] 데이터 저장/로드 (JSON 파일)
 - [x] 블랙리스트 기능 (삭제 시 재동기화 제외)
+- [x] 좋아요 해제 항목 개별 관리 (synced 필드, 일괄/개별 처리)
+- [x] 영상 상세 정보 저장 (tags, duration, topics)
 
 ### 다음 작업 (TODO)
 - [ ] UI/UX 개선 (피드백 반영)
