@@ -7,6 +7,8 @@ function Evaluate() {
   const [currentItem, setCurrentItem] = useState<VideoItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [comment, setComment] = useState('')
+  const [hoverRating, setHoverRating] = useState<number | null>(null)
+  const [selectedRating, setSelectedRating] = useState<number | null>(null)
 
   const loadData = async () => {
     try {
@@ -32,6 +34,7 @@ function Evaluate() {
     const randomIndex = Math.floor(Math.random() * list.length)
     setCurrentItem(list[randomIndex])
     setComment('')
+    setSelectedRating(null)
   }
 
   useEffect(() => {
@@ -40,6 +43,9 @@ function Evaluate() {
 
   const handleRating = async (rating: number) => {
     if (!currentItem) return
+
+    // 꽉 찬 별 효과 표시
+    setSelectedRating(rating)
 
     // 코멘트가 있으면 먼저 저장
     if (comment.trim()) {
@@ -50,7 +56,10 @@ function Evaluate() {
     if (result.success) {
       const remaining = items.filter(item => item.youtubeId !== currentItem.youtubeId)
       setItems(remaining)
-      pickRandom(remaining)
+      // 잠깐 딜레이 후 다음 곡으로
+      setTimeout(() => {
+        pickRandom(remaining)
+      }, 400)
     }
   }
 
@@ -131,19 +140,33 @@ function Evaluate() {
       />
 
       {/* 별점 */}
-      <div className="flex items-center gap-4 mb-8">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={() => handleRating(star)}
-            className="focus:outline-none transform hover:scale-125 transition-transform"
-          >
-            <Star
-              size={40}
-              className="text-gray-600 hover:text-yellow-400 hover:fill-yellow-400 transition-colors"
-            />
-          </button>
-        ))}
+      <div
+        className="flex items-center gap-4 mb-8"
+        onMouseLeave={() => setHoverRating(null)}
+      >
+        {[1, 2, 3, 4, 5].map((star) => {
+          const isSelected = selectedRating && selectedRating >= star
+          const isHovered = hoverRating && hoverRating >= star
+          return (
+            <button
+              key={star}
+              onClick={() => handleRating(star)}
+              onMouseEnter={() => setHoverRating(star)}
+              className="focus:outline-none transform hover:scale-125 transition-transform"
+            >
+              <Star
+                size={40}
+                className={`transition-colors ${
+                  isSelected
+                    ? 'fill-yellow-400 text-yellow-400'
+                    : isHovered
+                      ? 'text-yellow-400'
+                      : 'text-gray-600'
+                }`}
+              />
+            </button>
+          )
+        })}
       </div>
 
       {/* 액션 버튼 */}

@@ -353,7 +353,10 @@
       "channelTitle": "Tomo Fujita - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/SjR4DJzTCA4/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:47.938Z",
-      "comments": []
+      "comments": [
+        "funk"
+      ],
+      "rating": 4
     },
     {
       "id": "URw12tTRJXE",
@@ -362,7 +365,8 @@
       "channelTitle": "Thornapple - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/URw12tTRJXE/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:47.938Z",
-      "comments": []
+      "comments": [],
+      "rating": 3
     },
     {
       "id": "SiLSeVPQ0k0",
@@ -723,7 +727,8 @@
       "channelTitle": "The Beatles - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/YFDg-pgE0Hk/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:48.504Z",
-      "comments": []
+      "comments": [],
+      "rating": 4
     },
     {
       "id": "bI8P6ZSHSvE",

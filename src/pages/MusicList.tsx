@@ -8,6 +8,7 @@ function MusicList() {
   const [loading, setLoading] = useState(true)
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
+  const [hoverRating, setHoverRating] = useState<{ id: string; rating: number } | null>(null)
 
   const loadData = async () => {
     try {
@@ -135,23 +136,33 @@ function MusicList() {
                   <p className="text-sm text-gray-400 truncate">{item.channelTitle}</p>
 
                   {/* 별점 */}
-                  <div className="flex items-center gap-1 mt-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => handleRating(item.youtubeId, star)}
-                        className="focus:outline-none"
-                      >
-                        <Star
-                          size={18}
-                          className={`${
-                            item.rating && item.rating >= star
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-gray-600 hover:text-yellow-400'
-                          } transition-colors`}
-                        />
-                      </button>
-                    ))}
+                  <div
+                    className="flex items-center gap-1 mt-2"
+                    onMouseLeave={() => setHoverRating(null)}
+                  >
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const isHovered = hoverRating?.id === item.youtubeId && hoverRating.rating >= star
+                      const isRated = item.rating && item.rating >= star
+                      return (
+                        <button
+                          key={star}
+                          onClick={() => handleRating(item.youtubeId, star)}
+                          onMouseEnter={() => setHoverRating({ id: item.youtubeId, rating: star })}
+                          className="focus:outline-none"
+                        >
+                          <Star
+                            size={18}
+                            className={`transition-colors ${
+                              isRated
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : isHovered
+                                  ? 'text-yellow-400'
+                                  : 'text-gray-600'
+                            }`}
+                          />
+                        </button>
+                      )
+                    })}
                     {item.rating && (
                       <span className="ml-2 text-sm text-gray-400">{item.rating}/5</span>
                     )}
