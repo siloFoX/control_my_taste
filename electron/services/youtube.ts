@@ -23,6 +23,8 @@ export interface VideoItem {
   tags?: string[];
   duration?: string;
   topics?: string[];
+  hypeUp: number;
+  hypeDown: number;
 }
 
 function getOAuth2Client() {
@@ -73,6 +75,8 @@ export async function fetchAllLikedVideos(): Promise<VideoItem[]> {
           addedAt: item.snippet.publishedAt || new Date().toISOString(), // 좋아요 누른 시간
           comments: [],
           synced: true,
+          hypeUp: 0,
+          hypeDown: 0,
         });
       }
     }

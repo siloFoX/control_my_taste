@@ -162,6 +162,24 @@ ipcMain.handle('music:updateRating', async (_event, youtubeId: string, rating: n
   }
 });
 
+ipcMain.handle('music:updateHype', async (_event, youtubeId: string, type: 'up' | 'down') => {
+  try {
+    const musicData = loadMusicData();
+    const item = musicData.items.find(v => v.youtubeId === youtubeId);
+    if (item) {
+      if (type === 'up') {
+        item.hypeUp = (item.hypeUp || 0) + 1;
+      } else {
+        item.hypeDown = (item.hypeDown || 0) + 1;
+      }
+      saveMusicData(musicData);
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
 ipcMain.handle('music:delete', async (_event, youtubeId: string) => {
   try {
     const musicData = loadMusicData();

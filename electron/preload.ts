@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadMusic: () => ipcRenderer.invoke('music:load'),
   updateRating: (youtubeId: string, rating: number) =>
     ipcRenderer.invoke('music:updateRating', youtubeId, rating),
+  updateHype: (youtubeId: string, type: 'up' | 'down') =>
+    ipcRenderer.invoke('music:updateHype', youtubeId, type),
   deleteMusic: (youtubeId: string) =>
     ipcRenderer.invoke('music:delete', youtubeId),
   keepMusic: (youtubeId: string) =>

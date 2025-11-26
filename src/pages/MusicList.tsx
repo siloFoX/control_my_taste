@@ -1,4 +1,4 @@
-import { Search, Star, Trash2, Info, MessageSquare, X, Plus, RefreshCw, Unlink, Check, Copy, ExternalLink } from 'lucide-react'
+import { Search, Star, Trash2, Info, MessageSquare, X, Plus, RefreshCw, Unlink, Check, Copy, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { VideoItem } from '../types/electron'
 import ConfirmModal from '../components/ConfirmModal'
@@ -114,6 +114,29 @@ function MusicList() {
       setItems(items.map(item =>
         item.youtubeId === youtubeId ? { ...item, rating } : item
       ))
+    }
+  }
+
+  const handleHype = async (youtubeId: string, type: 'up' | 'down') => {
+    const result = await window.electronAPI.updateHype(youtubeId, type)
+    if (result.success) {
+      setItems(items.map(item =>
+        item.youtubeId === youtubeId
+          ? {
+              ...item,
+              hypeUp: type === 'up' ? (item.hypeUp || 0) + 1 : item.hypeUp,
+              hypeDown: type === 'down' ? (item.hypeDown || 0) + 1 : item.hypeDown,
+            }
+          : item
+      ))
+      // 상세 모달이 열려있으면 업데이트
+      if (detailModal?.youtubeId === youtubeId) {
+        setDetailModal({
+          ...detailModal,
+          hypeUp: type === 'up' ? (detailModal.hypeUp || 0) + 1 : detailModal.hypeUp,
+          hypeDown: type === 'down' ? (detailModal.hypeDown || 0) + 1 : detailModal.hypeDown,
+        })
+      }
     }
   }
 
@@ -288,6 +311,26 @@ function MusicList() {
                     {item.rating && (
                       <span className="ml-2 text-sm text-gray-400">{item.rating}/5</span>
                     )}
+
+                    {/* Hype 버튼 */}
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() => handleHype(item.youtubeId, 'up')}
+                        className="flex items-center gap-1 text-green-400 hover:text-green-300 transition-colors"
+                        title="Hype Up"
+                      >
+                        <ThumbsUp size={16} />
+                        <span className="text-sm">{item.hypeUp || 0}</span>
+                      </button>
+                      <button
+                        onClick={() => handleHype(item.youtubeId, 'down')}
+                        className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors"
+                        title="Hype Down"
+                      >
+                        <ThumbsDown size={16} />
+                        <span className="text-sm">{item.hypeDown || 0}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -505,7 +548,25 @@ function MusicList() {
               {/* 제목 */}
               <h3 className="text-xl font-bold mb-1 leading-tight">{detailModal.title}</h3>
               {/* 채널명 */}
-              <p className="text-gray-400 mb-4">{detailModal.channelTitle}</p>
+              <p className="text-gray-400 mb-2">{detailModal.channelTitle}</p>
+
+              {/* Hype 버튼 */}
+              <div className="flex items-center gap-4 mb-4">
+                <button
+                  onClick={() => handleHype(detailModal.youtubeId, 'up')}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded-lg transition-colors"
+                >
+                  <ThumbsUp size={20} />
+                  <span className="font-medium">{detailModal.hypeUp || 0}</span>
+                </button>
+                <button
+                  onClick={() => handleHype(detailModal.youtubeId, 'down')}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition-colors"
+                >
+                  <ThumbsDown size={20} />
+                  <span className="font-medium">{detailModal.hypeDown || 0}</span>
+                </button>
+              </div>
 
               {/* YouTube 링크 */}
               <div className="flex items-center gap-2 mb-4 p-3 bg-gray-700/50 rounded-lg">

@@ -1,4 +1,4 @@
-import { Star, ArrowRight, Trash2, ExternalLink, Plus, X } from 'lucide-react'
+import { Star, ArrowRight, Trash2, ExternalLink, Plus, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { VideoItem } from '../types/electron'
 import ConfirmModal from '../components/ConfirmModal'
@@ -121,6 +121,29 @@ function Evaluate() {
     }
   }
 
+  const handleHype = async (type: 'up' | 'down') => {
+    if (!currentItem) return
+
+    const result = await window.electronAPI.updateHype(currentItem.youtubeId, type)
+    if (result.success) {
+      setCurrentItem({
+        ...currentItem,
+        hypeUp: type === 'up' ? (currentItem.hypeUp || 0) + 1 : currentItem.hypeUp,
+        hypeDown: type === 'down' ? (currentItem.hypeDown || 0) + 1 : currentItem.hypeDown,
+      })
+      // items 배열도 업데이트
+      setItems(items.map(item =>
+        item.youtubeId === currentItem.youtubeId
+          ? {
+              ...item,
+              hypeUp: type === 'up' ? (item.hypeUp || 0) + 1 : item.hypeUp,
+              hypeDown: type === 'down' ? (item.hypeDown || 0) + 1 : item.hypeDown,
+            }
+          : item
+      ))
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
@@ -164,7 +187,25 @@ function Evaluate() {
 
       {/* 제목 & 채널 */}
       <h3 className="text-xl font-medium text-center mb-2 px-4">{currentItem.title}</h3>
-      <p className="text-gray-400 mb-6">{currentItem.channelTitle}</p>
+      <p className="text-gray-400 mb-4">{currentItem.channelTitle}</p>
+
+      {/* Hype 버튼 */}
+      <div className="flex items-center gap-6 mb-6">
+        <button
+          onClick={() => handleHype('up')}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded-lg transition-colors"
+        >
+          <ThumbsUp size={24} />
+          <span className="text-lg font-medium">{currentItem.hypeUp || 0}</span>
+        </button>
+        <button
+          onClick={() => handleHype('down')}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition-colors"
+        >
+          <ThumbsDown size={24} />
+          <span className="text-lg font-medium">{currentItem.hypeDown || 0}</span>
+        </button>
+      </div>
 
       {/* 별점 */}
       <div

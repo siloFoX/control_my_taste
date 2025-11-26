@@ -24,6 +24,7 @@ Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 - [x] 영상 상세 정보 저장 (tags, duration, topics)
 - [x] 커스텀 모달 (ConfirmModal, AlertModal) - 네이티브 confirm/alert 대체
 - [x] 페이지 상태 localStorage 저장 (음악 목록 페이지/검색어, 평가하기 현재 항목)
+- [x] Hype Up/Down 기능 (좋아요/싫어요 무제한 클릭)
 
 ### 다음 작업 (TODO)
 - [ ] UI/UX 개선 (피드백 반영)
@@ -101,6 +102,7 @@ syncYoutube()                    // 동기화
 // Music
 loadMusic()                      // 목록 로드
 updateRating(youtubeId, rating)  // 별점 저장
+updateHype(youtubeId, type)      // Hype up/down (type: 'up' | 'down')
 deleteMusic(youtubeId)           // 삭제 + 블랙리스트 등록
 addComment(youtubeId, comment)   // 코멘트 추가
 deleteComment(youtubeId, index)  // 코멘트 삭제
@@ -122,6 +124,8 @@ interface VideoItem {
   addedAt: string;
   rating?: number;      // 1-5
   comments: string[];
+  hypeUp: number;       // 좋아요 클릭 횟수 (무제한)
+  hypeDown: number;     // 싫어요 클릭 횟수 (무제한)
 }
 
 interface BlacklistItem {

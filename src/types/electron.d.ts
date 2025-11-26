@@ -12,6 +12,9 @@ export interface VideoItem {
   tags?: string[];
   duration?: string; // ISO 8601 형식 (PT5M47S)
   topics?: string[]; // Wikipedia URL 형식
+  // Hype 기능
+  hypeUp: number;
+  hypeDown: number;
 }
 
 export interface MusicData {
@@ -52,6 +55,7 @@ declare global {
       confirmSync: (action: 'keep_all' | 'delete_all' | 'individual') => Promise<SyncResponse>;
       loadMusic: () => Promise<APIResponse<MusicData>>;
       updateRating: (youtubeId: string, rating: number) => Promise<APIResponse>;
+      updateHype: (youtubeId: string, type: 'up' | 'down') => Promise<APIResponse>;
       deleteMusic: (youtubeId: string) => Promise<APIResponse>;
       keepMusic: (youtubeId: string) => Promise<APIResponse>; // 개별 항목 남기기 (synced 상태 유지)
       loadBlacklist: () => Promise<APIResponse<BlacklistItem[]>>;
