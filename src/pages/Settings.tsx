@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react'
 import type { Settings } from '../types/electron'
+import AlertModal from '../components/AlertModal'
 
 function SettingsPage() {
   const [settings, setSettings] = useState<Settings>({ keepUnlikedVideos: null })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [alertModal, setAlertModal] = useState<{
+    show: boolean
+    title: string
+    message: string
+    type: 'info' | 'success' | 'error'
+  }>({ show: false, title: '', message: '', type: 'info' })
 
   useEffect(() => {
     loadSettings()
@@ -31,10 +38,10 @@ function SettingsPage() {
     try {
       const result = await window.electronAPI.saveSettings(newSettings)
       if (!result.success) {
-        alert('설정 저장 실패: ' + result.error)
+        setAlertModal({ show: true, title: '저장 실패', message: result.error || '알 수 없는 오류', type: 'error' })
       }
     } catch (error) {
-      alert('설정 저장 중 오류: ' + error)
+      setAlertModal({ show: true, title: '저장 오류', message: String(error), type: 'error' })
     } finally {
       setSaving(false)
     }
@@ -117,6 +124,14 @@ function SettingsPage() {
           <p className="text-sm text-blue-400 mt-4">저장 중...</p>
         )}
       </div>
+
+      <AlertModal
+        isOpen={alertModal.show}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ ...alertModal, show: false })}
+      />
     </div>
   )
 }

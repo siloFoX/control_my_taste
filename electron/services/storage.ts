@@ -27,6 +27,9 @@ export interface MusicData {
 
 export interface BlacklistItem {
   youtubeId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
   deletedAt: string;
 }
 
@@ -62,10 +65,16 @@ export function saveBlacklist(items: BlacklistItem[]): void {
   fs.writeFileSync(BLACKLIST_FILE, JSON.stringify(items, null, 2));
 }
 
-export function addToBlacklist(youtubeId: string): void {
+export function addToBlacklist(video: { youtubeId: string; title: string; channelTitle: string; thumbnailUrl: string }): void {
   const blacklist = loadBlacklist();
-  if (!blacklist.find(item => item.youtubeId === youtubeId)) {
-    blacklist.push({ youtubeId, deletedAt: new Date().toISOString() });
+  if (!blacklist.find(item => item.youtubeId === video.youtubeId)) {
+    blacklist.push({
+      youtubeId: video.youtubeId,
+      title: video.title,
+      channelTitle: video.channelTitle,
+      thumbnailUrl: video.thumbnailUrl,
+      deletedAt: new Date().toISOString(),
+    });
     saveBlacklist(blacklist);
   }
 }

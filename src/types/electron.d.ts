@@ -21,6 +21,9 @@ export interface MusicData {
 
 export interface BlacklistItem {
   youtubeId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
   deletedAt: string;
 }
 

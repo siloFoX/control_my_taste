@@ -1,7 +1,7 @@
 import { Search, Star, Trash2, Info, MessageSquare, X, Plus, RefreshCw, Unlink, Check, Copy, ExternalLink } from 'lucide-react'
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { VideoItem } from '../types/electron'
+import ConfirmModal from '../components/ConfirmModal'
 
 // 아이템 카드 높이 (p-4 패딩 + h-20 썸네일 + gap-4)
 const ITEM_HEIGHT = 112
@@ -10,7 +10,14 @@ const FIXED_HEIGHT = 260
 
 function MusicList() {
   const [items, setItems] = useState<VideoItem[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTermState] = useState(() => {
+    return localStorage.getItem('musicListSearch') || ''
+  })
+
+  const setSearchTerm = (value: string) => {
+    setSearchTermState(value)
+    localStorage.setItem('musicListSearch', value)
+  }
   const [loading, setLoading] = useState(true)
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
@@ -18,22 +25,19 @@ function MusicList() {
   const [syncActionMenu, setSyncActionMenu] = useState<string | null>(null)
   const [detailModal, setDetailModal] = useState<VideoItem | null>(null)
   const [copied, setCopied] = useState(false)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [currentPage, setCurrentPageState] = useState(() => {
+    const saved = localStorage.getItem('musicListPage')
+    return saved ? parseInt(saved, 10) : 1
+  })
 
-  // URL에서 페이지 번호 읽기
-  const currentPage = parseInt(searchParams.get('page') || '1', 10)
   const setCurrentPage = (page: number | ((prev: number) => number)) => {
-    const newPage = typeof page === 'function' ? page(currentPage) : page
-    setSearchParams(prev => {
-      if (newPage === 1) {
-        prev.delete('page')
-      } else {
-        prev.set('page', String(newPage))
-      }
-      return prev
-    }, { replace: true })
+    setCurrentPageState(prev => {
+      const newPage = typeof page === 'function' ? page(prev) : page
+      localStorage.setItem('musicListPage', String(newPage))
+      return newPage
+    })
   }
 
   // 창 크기에 맞춰 페이지당 아이템 수 계산
@@ -93,9 +97,15 @@ function MusicList() {
     setSyncActionMenu(null)
   }
 
-  const handleDeleteWithConfirm = async (youtubeId: string) => {
-    if (!confirm('이 항목을 삭제하시겠습니까?')) return
-    await handleDelete(youtubeId)
+  const handleDeleteWithConfirm = (youtubeId: string) => {
+    setDeleteConfirm(youtubeId)
+  }
+
+  const confirmDelete = async () => {
+    if (deleteConfirm) {
+      await handleDelete(deleteConfirm)
+      setDeleteConfirm(null)
+    }
   }
 
   const handleRating = async (youtubeId: string, rating: number) => {
@@ -142,17 +152,21 @@ function MusicList() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage)
 
-  // 검색어 변경 또는 페이지당 아이템 수 변경 시 페이지 조정
+  // 검색어 변경 시 첫 페이지로 (이전 값과 비교)
+  const prevSearchTerm = useRef(searchTerm)
   useEffect(() => {
-    setCurrentPage(1)
+    if (prevSearchTerm.current !== searchTerm) {
+      prevSearchTerm.current = searchTerm
+      setCurrentPage(1)
+    }
   }, [searchTerm])
 
   // 페이지 수가 변경되어 현재 페이지가 범위를 벗어나면 조정
   useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
+    if (totalPages > 0 && currentPage > totalPages) {
       setCurrentPage(totalPages)
     }
-  }, [totalPages, currentPage])
+  }, [totalPages])
 
   const openYoutube = (youtubeId: string) => {
     window.open(`https://www.youtube.com/watch?v=${youtubeId}`, '_blank')
@@ -442,6 +456,18 @@ function MusicList() {
           )}
         </div>
       )}
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={deleteConfirm !== null}
+        title="항목 삭제"
+        message="이 항목을 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+        danger
+      />
 
       {/* 상세 정보 모달 */}
       {detailModal && (

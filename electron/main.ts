@@ -165,9 +165,17 @@ ipcMain.handle('music:updateRating', async (_event, youtubeId: string, rating: n
 ipcMain.handle('music:delete', async (_event, youtubeId: string) => {
   try {
     const musicData = loadMusicData();
+    const videoToDelete = musicData.items.find(v => v.youtubeId === youtubeId);
     musicData.items = musicData.items.filter(v => v.youtubeId !== youtubeId);
     saveMusicData(musicData);
-    addToBlacklist(youtubeId);
+    if (videoToDelete) {
+      addToBlacklist({
+        youtubeId: videoToDelete.youtubeId,
+        title: videoToDelete.title,
+        channelTitle: videoToDelete.channelTitle,
+        thumbnailUrl: videoToDelete.thumbnailUrl,
+      });
+    }
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };

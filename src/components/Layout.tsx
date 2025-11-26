@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { Music, Star, Trash2, RefreshCw, Settings, X } from 'lucide-react'
 import { useState } from 'react'
 import type { VideoItem } from '../types/electron'
+import AlertModal from './AlertModal'
 
 interface LayoutProps {
   onSync?: () => void
@@ -23,6 +24,16 @@ function Layout({ onSync }: LayoutProps) {
     added: [],
     totalFetched: 0,
   })
+  const [alertModal, setAlertModal] = useState<{
+    show: boolean
+    title: string
+    message: string
+    type: 'info' | 'success' | 'error'
+  }>({ show: false, title: '', message: '', type: 'info' })
+
+  const showAlert = (title: string, message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    setAlertModal({ show: true, title, message, type })
+  }
 
   const navItems = [
     { to: '/', icon: Music, label: '음악 목록' },
@@ -49,15 +60,15 @@ function Layout({ onSync }: LayoutProps) {
         } else {
           onSync?.()
           const addedCount = result.added?.length || 0
-          let message = `동기화 완료! 총 ${result.data?.items.length || 0}개 항목`
+          let message = `총 ${result.data?.items.length || 0}개 항목`
           if (addedCount > 0) message += ` (새로 추가: ${addedCount}개)`
-          alert(message)
+          showAlert('동기화 완료', message, 'success')
         }
       } else {
-        alert('동기화 실패: ' + result.error)
+        showAlert('동기화 실패', result.error || '알 수 없는 오류', 'error')
       }
     } catch (error) {
-      alert('동기화 중 오류 발생: ' + error)
+      showAlert('동기화 오류', String(error), 'error')
     } finally {
       setSyncing(false)
     }
@@ -80,12 +91,12 @@ function Layout({ onSync }: LayoutProps) {
       if (result.success) {
         onSync?.()
         const actionText = action === 'keep_all' ? '유지됨' : '삭제됨'
-        alert(`좋아요 해제 항목 ${unsyncedCount}개 ${actionText}`)
+        showAlert('처리 완료', `좋아요 해제 항목 ${unsyncedCount}개 ${actionText}`, 'success')
       } else {
-        alert('처리 실패: ' + result.error)
+        showAlert('처리 실패', result.error || '알 수 없는 오류', 'error')
       }
     } catch (error) {
-      alert('처리 중 오류 발생: ' + error)
+      showAlert('처리 오류', String(error), 'error')
     } finally {
       setSyncing(false)
     }
@@ -212,6 +223,15 @@ function Layout({ onSync }: LayoutProps) {
           </div>
         </div>
       )}
+
+      {/* 알림 모달 */}
+      <AlertModal
+        isOpen={alertModal.show}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ ...alertModal, show: false })}
+      />
     </div>
   )
 }

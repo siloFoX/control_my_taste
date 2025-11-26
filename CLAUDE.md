@@ -14,14 +14,16 @@ Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 - [x] ES Module 호환성 문제 해결
 - [x] YouTube Data API 연동 (OAuth 인증)
 - [x] 음악 목록 동기화 기능 구현 (playlistItems.list 방식, 999개 제한 해제)
-- [x] 음악 목록 페이지 (썸네일, 별점, 검색, 삭제, 코멘트, 페이징)
-- [x] 평가하기 페이지 (랜덤 선택, 별점 + 코멘트)
-- [x] 휴지통 페이지 (블랙리스트 확인/복구)
+- [x] 음악 목록 페이지 (썸네일, 별점, 검색, 삭제, 코멘트, 동적 페이징, 상세정보 모달)
+- [x] 평가하기 페이지 (랜덤 선택, 별점 + 코멘트 추가/삭제, 다음 버튼)
+- [x] 휴지통 페이지 (썸네일/제목 표시, 복구)
 - [x] 설정 페이지 (좋아요 해제 항목 처리 설정)
 - [x] 데이터 저장/로드 (JSON 파일)
-- [x] 블랙리스트 기능 (삭제 시 재동기화 제외)
+- [x] 블랙리스트 기능 (삭제 시 제목/썸네일 포함 저장)
 - [x] 좋아요 해제 항목 개별 관리 (synced 필드, 일괄/개별 처리)
 - [x] 영상 상세 정보 저장 (tags, duration, topics)
+- [x] 커스텀 모달 (ConfirmModal, AlertModal) - 네이티브 confirm/alert 대체
+- [x] 페이지 상태 localStorage 저장 (음악 목록 페이지/검색어, 평가하기 현재 항목)
 
 ### 다음 작업 (TODO)
 - [ ] UI/UX 개선 (피드백 반영)
@@ -63,11 +65,14 @@ control_my_taste/
 │   ├── main.tsx             # React 엔트리포인트
 │   ├── App.tsx              # 라우팅 설정
 │   ├── components/
-│   │   └── Layout.tsx       # 사이드바 + 동기화 버튼
+│   │   ├── Layout.tsx       # 사이드바 + 동기화 버튼
+│   │   ├── ConfirmModal.tsx # 확인 모달 (confirm 대체)
+│   │   └── AlertModal.tsx   # 알림 모달 (alert 대체)
 │   ├── pages/
-│   │   ├── MusicList.tsx    # 음악 목록 (검색, 별점, 코멘트, 삭제)
+│   │   ├── MusicList.tsx    # 음악 목록 (검색, 별점, 코멘트, 삭제, 상세정보)
 │   │   ├── Evaluate.tsx     # 랜덤 평가 (별점 + 코멘트)
-│   │   └── Trash.tsx        # 휴지통 (복구)
+│   │   ├── Trash.tsx        # 휴지통 (복구)
+│   │   └── Settings.tsx     # 설정
 │   └── types/
 │       └── electron.d.ts    # IPC API 타입 정의
 ├── data/
@@ -82,10 +87,10 @@ control_my_taste/
 
 ## 핵심 기능
 
-1. **YouTube 동기화**: 좋아요 목록에서 최대 100개 가져오기
-2. **음악 목록**: 썸네일, 제목, 채널명, 별점, 코멘트, 검색, 삭제
-3. **평가하기**: 미평가 음악 랜덤 선택 → 별점(1-5) + 코멘트(선택)
-4. **휴지통**: 삭제된 항목 확인/복구 (블랙리스트)
+1. **YouTube 동기화**: 좋아요 목록 전체 가져오기 (playlistItems.list, 999개 제한 없음)
+2. **음악 목록**: 썸네일, 제목, 채널명, 별점, 코멘트, 검색, 삭제, 상세정보 모달, 동적 페이징
+3. **평가하기**: 미평가 음악 랜덤 선택 → 별점(1-5) + 코멘트 추가/삭제
+4. **휴지통**: 삭제된 항목 확인/복구 (썸네일, 제목 포함)
 
 ## IPC API
 
@@ -121,6 +126,9 @@ interface VideoItem {
 
 interface BlacklistItem {
   youtubeId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
   deletedAt: string;
 }
 ```
@@ -142,6 +150,10 @@ Cannot use import statement outside a module
 ### 경로 주의 (빌드 후)
 - `electron/services/` 파일들은 빌드 후 `dist/electron/services/`에 위치
 - 상대 경로 사용 시 `../../../` 로 프로젝트 루트 접근
+
+### 네이티브 confirm/alert 포커스 문제
+Electron에서 네이티브 `confirm()`, `alert()` 사용 시 포커스가 제대로 복구되지 않는 문제 발생.
+→ 커스텀 모달 (`ConfirmModal`, `AlertModal`) 컴포넌트로 대체하여 해결.
 
 ## 주의사항
 
