@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Music, Star, Trash2, RefreshCw, Settings, X } from 'lucide-react'
+import { Music, Star, Trash2, RefreshCw, Settings, X, Filter } from 'lucide-react'
 import { useState } from 'react'
 import type { VideoItem } from '../types/electron'
 import AlertModal from './AlertModal'
@@ -37,6 +37,7 @@ function Layout({ onSync }: LayoutProps) {
 
   const navItems = [
     { to: '/', icon: Music, label: '음악 목록' },
+    { to: '/search', icon: Filter, label: '조건 검색' },
     { to: '/evaluate', icon: Star, label: '평가하기' },
     { to: '/trash', icon: Trash2, label: '휴지통' },
     { to: '/settings', icon: Settings, label: '설정' },

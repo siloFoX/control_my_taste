@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import MusicList from './pages/MusicList'
+import Search from './pages/Search'
 import Evaluate from './pages/Evaluate'
 import Trash from './pages/Trash'
 import Settings from './pages/Settings'
@@ -11,6 +12,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<MusicList />} />
+          <Route path="search" element={<Search />} />
           <Route path="evaluate" element={<Evaluate />} />
           <Route path="trash" element={<Trash />} />
           <Route path="settings" element={<Settings />} />

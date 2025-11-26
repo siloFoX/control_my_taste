@@ -2,8 +2,8 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchAllLikedVideos, fetchVideoDetails, isAuthenticated } from './services/youtube.js';
-import { loadMusicData, saveMusicData, loadBlacklist, saveBlacklist, addToBlacklist, mergeVideos, loadSettings, saveSettings, deleteAllUnsynced, keepItem } from './services/storage.js';
-import type { Settings } from './services/storage.js';
+import { loadMusicData, saveMusicData, loadBlacklist, saveBlacklist, addToBlacklist, mergeVideos, loadSettings, saveSettings, deleteAllUnsynced, keepItem, loadTemplates, addTemplate, deleteTemplate } from './services/storage.js';
+import type { Settings, SearchTemplate } from './services/storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,8 +16,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    minWidth: 800,
-    minHeight: 600,
+    minWidth: 1400,
+    minHeight: 800,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -247,6 +247,20 @@ ipcMain.handle('music:addComment', async (_event, youtubeId: string, comment: st
   }
 });
 
+ipcMain.handle('music:updateComment', async (_event, youtubeId: string, commentIndex: number, comment: string) => {
+  try {
+    const musicData = loadMusicData();
+    const item = musicData.items.find(v => v.youtubeId === youtubeId);
+    if (item && item.comments[commentIndex] !== undefined) {
+      item.comments[commentIndex] = comment;
+      saveMusicData(musicData);
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
 ipcMain.handle('music:deleteComment', async (_event, youtubeId: string, commentIndex: number) => {
   try {
     const musicData = loadMusicData();
@@ -274,6 +288,34 @@ ipcMain.handle('settings:load', async () => {
 ipcMain.handle('settings:save', async (_event, settings: Settings) => {
   try {
     saveSettings(settings);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+// Template handlers
+ipcMain.handle('templates:load', async () => {
+  try {
+    const templates = loadTemplates();
+    return { success: true, data: templates };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('templates:save', async (_event, template: SearchTemplate) => {
+  try {
+    addTemplate(template);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('templates:delete', async (_event, templateId: string) => {
+  try {
+    deleteTemplate(templateId);
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };

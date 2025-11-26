@@ -34,6 +34,22 @@ export interface Settings {
   keepUnlikedVideos: boolean | null;
 }
 
+// 검색 조건 타입
+export type ConditionType = 'rating' | 'channel' | 'keyword' | 'comment' | 'tag' | 'hasComment' | 'hypeUp' | 'hypeDown';
+
+export interface SearchCondition {
+  type: ConditionType;
+  value: string; // rating: "1-5" 또는 "unrated", channel/comment: 검색어, hasComment: "true"/"false", hype: ">=10"
+}
+
+export interface SearchTemplate {
+  id: string;
+  name: string;
+  includeConditions: SearchCondition[];
+  excludeConditions: SearchCondition[];
+  createdAt: string;
+}
+
 export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -61,9 +77,14 @@ declare global {
       loadBlacklist: () => Promise<APIResponse<BlacklistItem[]>>;
       restoreFromBlacklist: (youtubeId: string) => Promise<APIResponse>;
       addComment: (youtubeId: string, comment: string) => Promise<APIResponse>;
+      updateComment: (youtubeId: string, commentIndex: number, comment: string) => Promise<APIResponse>;
       deleteComment: (youtubeId: string, commentIndex: number) => Promise<APIResponse>;
       loadSettings: () => Promise<APIResponse<Settings>>;
       saveSettings: (settings: Settings) => Promise<APIResponse>;
+      // 검색 템플릿
+      loadTemplates: () => Promise<APIResponse<SearchTemplate[]>>;
+      saveTemplate: (template: SearchTemplate) => Promise<APIResponse>;
+      deleteTemplate: (templateId: string) => Promise<APIResponse>;
     };
   }
 }

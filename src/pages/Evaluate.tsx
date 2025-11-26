@@ -1,4 +1,4 @@
-import { Star, ArrowRight, Trash2, ExternalLink, Plus, X, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Star, ArrowRight, Trash2, ExternalLink, Plus, X, ThumbsUp, ThumbsDown, Pencil, Check } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { VideoItem } from '../types/electron'
 import ConfirmModal from '../components/ConfirmModal'
@@ -8,6 +8,7 @@ function Evaluate() {
   const [currentItem, setCurrentItem] = useState<VideoItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
+  const [editingComment, setEditingComment] = useState<{ index: number; text: string } | null>(null)
   const [hoverRating, setHoverRating] = useState<number | null>(null)
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -88,6 +89,19 @@ function Evaluate() {
         comments: [...currentItem.comments, newComment.trim()]
       })
       setNewComment('')
+    }
+  }
+
+  const handleUpdateComment = async (commentIndex: number, newText: string) => {
+    if (!currentItem || !newText.trim()) return
+
+    const result = await window.electronAPI.updateComment(currentItem.youtubeId, commentIndex, newText.trim())
+    if (result.success) {
+      setCurrentItem({
+        ...currentItem,
+        comments: currentItem.comments.map((c, i) => i === commentIndex ? newText.trim() : c)
+      })
+      setEditingComment(null)
     }
   }
 
@@ -244,13 +258,49 @@ function Evaluate() {
                 key={index}
                 className="flex items-start justify-between gap-2 p-2 bg-gray-700/50 rounded"
               >
-                <p className="text-sm text-gray-300 flex-1">{comment}</p>
-                <button
-                  onClick={() => handleDeleteComment(index)}
-                  className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-                >
-                  <X size={14} />
-                </button>
+                {editingComment?.index === index ? (
+                  <div className="flex-1 flex gap-2">
+                    <input
+                      type="text"
+                      value={editingComment.text}
+                      onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleUpdateComment(index, editingComment.text)
+                        if (e.key === 'Escape') setEditingComment(null)
+                      }}
+                      className="flex-1 px-2 py-1 bg-gray-600 border border-gray-500 rounded focus:outline-none focus:border-blue-500 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => handleUpdateComment(index, editingComment.text)}
+                      className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      onClick={() => setEditingComment(null)}
+                      className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-300 flex-1">{comment}</p>
+                    <button
+                      onClick={() => setEditingComment({ index, text: comment })}
+                      className="p-1 text-gray-500 hover:text-blue-400 transition-colors"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteComment(index)}
+                      className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </>
+                )}
               </div>
             ))}
           </div>

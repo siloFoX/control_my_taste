@@ -10,12 +10,13 @@ Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 - [x] 프로젝트 기본 구조 설정 (Electron + React + TypeScript + Vite)
 - [x] Tailwind CSS 설정
 - [x] 기본 UI 레이아웃 구현 (사이드바 + 메인 컨텐츠)
-- [x] 라우팅 설정 (/, /evaluate, /trash, /settings)
+- [x] 라우팅 설정 (/, /search, /evaluate, /trash, /settings)
 - [x] ES Module 호환성 문제 해결
 - [x] YouTube Data API 연동 (OAuth 인증)
 - [x] 음악 목록 동기화 기능 구현 (playlistItems.list 방식, 999개 제한 해제)
-- [x] 음악 목록 페이지 (썸네일, 별점, 검색, 삭제, 코멘트, 동적 페이징, 상세정보 모달)
-- [x] 평가하기 페이지 (랜덤 선택, 별점 + 코멘트 추가/삭제, 다음 버튼)
+- [x] 음악 목록 페이지 (썸네일, 별점, 검색, 삭제, 코멘트 추가/수정/삭제, 동적 페이징, 상세정보 모달)
+- [x] 조건 검색 페이지 (포함/미포함 조건, 템플릿 저장/불러오기, 검색 결과 유지)
+- [x] 평가하기 페이지 (랜덤 선택, 별점 + 코멘트 추가/수정/삭제, 다음 버튼)
 - [x] 휴지통 페이지 (썸네일/제목 표시, 복구)
 - [x] 설정 페이지 (좋아요 해제 항목 처리 설정)
 - [x] 데이터 저장/로드 (JSON 파일)
@@ -23,13 +24,14 @@ Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 - [x] 좋아요 해제 항목 개별 관리 (synced 필드, 일괄/개별 처리)
 - [x] 영상 상세 정보 저장 (tags, duration, topics)
 - [x] 커스텀 모달 (ConfirmModal, AlertModal) - 네이티브 confirm/alert 대체
-- [x] 페이지 상태 localStorage 저장 (음악 목록 페이지/검색어, 평가하기 현재 항목)
+- [x] 페이지 상태 localStorage 저장 (음악 목록 페이지/검색어, 평가하기 현재 항목, 조건 검색)
 - [x] Hype Up/Down 기능 (좋아요/싫어요 무제한 클릭)
 - [x] UI 개선: 스크롤바 자동 숨김, 메뉴바 자동 숨김 (Alt로 토글)
 - [x] 휴지통 썸네일/제목 없음 예외처리 개선
+- [x] 코멘트 수정 기능
+- [x] 창 최소 크기 설정 (1400x800)
 
 ### 다음 작업 (TODO)
-- [ ] UI/UX 개선 (피드백 반영)
 - [ ] 프로덕션 빌드 테스트
 
 ## 기술 스택
@@ -41,7 +43,7 @@ Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 - Lucide React (아이콘)
 - YouTube Data API v3
 - googleapis (Node.js 라이브러리)
-- 데이터: JSON 파일 저장 (data/music.json, data/blacklist.json)
+- 데이터: JSON 파일 저장 (data/music.json, data/blacklist.json, data/templates.json)
 
 ## 주요 명령어
 
@@ -73,6 +75,7 @@ control_my_taste/
 │   │   └── AlertModal.tsx   # 알림 모달 (alert 대체)
 │   ├── pages/
 │   │   ├── MusicList.tsx    # 음악 목록 (검색, 별점, 코멘트, 삭제, 상세정보)
+│   │   ├── Search.tsx       # 조건 검색 (포함/미포함 조건, 템플릿)
 │   │   ├── Evaluate.tsx     # 랜덤 평가 (별점 + 코멘트)
 │   │   ├── Trash.tsx        # 휴지통 (복구)
 │   │   └── Settings.tsx     # 설정
@@ -80,7 +83,8 @@ control_my_taste/
 │       └── electron.d.ts    # IPC API 타입 정의
 ├── data/
 │   ├── music.json           # 음악 데이터
-│   └── blacklist.json       # 블랙리스트
+│   ├── blacklist.json       # 블랙리스트
+│   └── templates.json       # 검색 템플릿
 ├── credentials.json         # YouTube OAuth (gitignore)
 ├── token.json               # 인증 토큰 (gitignore)
 ├── tsconfig.json            # React용
@@ -92,8 +96,10 @@ control_my_taste/
 
 1. **YouTube 동기화**: 좋아요 목록 전체 가져오기 (playlistItems.list, 999개 제한 없음)
 2. **음악 목록**: 썸네일, 제목, 채널명, 별점, 코멘트, 검색, 삭제, 상세정보 모달, 동적 페이징
-3. **평가하기**: 미평가 음악 랜덤 선택 → 별점(1-5) + 코멘트 추가/삭제
-4. **휴지통**: 삭제된 항목 확인/복구 (썸네일, 제목 포함)
+3. **조건 검색**: 포함/미포함 조건 설정, 템플릿 저장/불러오기, 검색 결과 유지
+   - 조건: 별점, 채널명, 키워드(코멘트+태그), 코멘트, 태그, 코멘트 유무, Hype Up/Down
+4. **평가하기**: 미평가 음악 랜덤 선택 → 별점(1-5) + 코멘트 추가/수정/삭제
+5. **휴지통**: 삭제된 항목 확인/복구 (썸네일, 제목 포함)
 
 ## IPC API
 
@@ -107,11 +113,17 @@ updateRating(youtubeId, rating)  // 별점 저장
 updateHype(youtubeId, type)      // Hype up/down (type: 'up' | 'down')
 deleteMusic(youtubeId)           // 삭제 + 블랙리스트 등록
 addComment(youtubeId, comment)   // 코멘트 추가
+updateComment(youtubeId, index, comment) // 코멘트 수정
 deleteComment(youtubeId, index)  // 코멘트 삭제
 
 // Blacklist
 loadBlacklist()                  // 블랙리스트 로드
 restoreFromBlacklist(youtubeId)  // 복구
+
+// Templates
+loadTemplates()                  // 검색 템플릿 로드
+saveTemplate(template)           // 템플릿 저장
+deleteTemplate(templateId)       // 템플릿 삭제
 ```
 
 ## 데이터 스키마
@@ -136,6 +148,19 @@ interface BlacklistItem {
   channelTitle: string;
   thumbnailUrl: string;
   deletedAt: string;
+}
+
+interface SearchTemplate {
+  id: string;
+  name: string;
+  includeConditions: SearchCondition[];
+  excludeConditions: SearchCondition[];
+  createdAt: string;
+}
+
+interface SearchCondition {
+  type: ConditionType;  // 'rating' | 'channel' | 'keyword' | 'comment' | 'tag' | 'hasComment' | 'hypeUp' | 'hypeDown'
+  value: string;
 }
 ```
 

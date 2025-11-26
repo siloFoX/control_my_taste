@@ -1,4 +1,4 @@
-import { Search, Star, Trash2, Info, MessageSquare, X, Plus, RefreshCw, Unlink, Check, Copy, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Search, Star, Trash2, MessageSquare, X, Plus, RefreshCw, Unlink, Check, Copy, ExternalLink, ThumbsUp, ThumbsDown, Pencil } from 'lucide-react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { VideoItem } from '../types/electron'
 import ConfirmModal from '../components/ConfirmModal'
@@ -21,6 +21,7 @@ function MusicList() {
   const [loading, setLoading] = useState(true)
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
+  const [editingComment, setEditingComment] = useState<{ youtubeId: string; index: number; text: string } | null>(null)
   const [hoverRating, setHoverRating] = useState<{ id: string; rating: number } | null>(null)
   const [syncActionMenu, setSyncActionMenu] = useState<string | null>(null)
   const [detailModal, setDetailModal] = useState<VideoItem | null>(null)
@@ -154,6 +155,19 @@ function MusicList() {
     }
   }
 
+  const handleUpdateComment = async (youtubeId: string, commentIndex: number, newText: string) => {
+    if (!newText.trim()) return
+    const result = await window.electronAPI.updateComment(youtubeId, commentIndex, newText.trim())
+    if (result.success) {
+      setItems(items.map(item =>
+        item.youtubeId === youtubeId
+          ? { ...item, comments: item.comments.map((c, i) => i === commentIndex ? newText.trim() : c) }
+          : item
+      ))
+      setEditingComment(null)
+    }
+  }
+
   const handleDeleteComment = async (youtubeId: string, commentIndex: number) => {
     const result = await window.electronAPI.deleteComment(youtubeId, commentIndex)
     if (result.success) {
@@ -274,7 +288,7 @@ function MusicList() {
                 <div className="flex-1 min-w-0">
                   <h3
                     className="font-medium truncate cursor-pointer hover:text-blue-400"
-                    onClick={() => openYoutube(item.youtubeId)}
+                    onClick={() => setDetailModal(item)}
                   >
                     {item.title}
                   </h3>
@@ -386,11 +400,11 @@ function MusicList() {
                     )}
                   </button>
                   <button
-                    onClick={() => setDetailModal(item)}
+                    onClick={() => openYoutube(item.youtubeId)}
                     className="p-2 text-gray-400 hover:text-blue-400 transition-colors"
-                    title="상세 정보"
+                    title="YouTube에서 보기"
                   >
-                    <Info size={20} />
+                    <ExternalLink size={20} />
                   </button>
                   <button
                     onClick={() => handleDeleteWithConfirm(item.youtubeId)}
@@ -414,13 +428,49 @@ function MusicList() {
                             key={index}
                             className="flex items-start justify-between gap-2 p-2 bg-gray-700/50 rounded"
                           >
-                            <p className="text-sm text-gray-300 flex-1">{comment}</p>
-                            <button
-                              onClick={() => handleDeleteComment(item.youtubeId, index)}
-                              className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-                            >
-                              <X size={14} />
-                            </button>
+                            {editingComment?.youtubeId === item.youtubeId && editingComment?.index === index ? (
+                              <div className="flex-1 flex gap-2">
+                                <input
+                                  type="text"
+                                  value={editingComment.text}
+                                  onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateComment(item.youtubeId, index, editingComment.text)
+                                    if (e.key === 'Escape') setEditingComment(null)
+                                  }}
+                                  className="flex-1 px-2 py-1 bg-gray-600 border border-gray-500 rounded focus:outline-none focus:border-blue-500 text-sm"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleUpdateComment(item.youtubeId, index, editingComment.text)}
+                                  className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                                >
+                                  <Check size={14} />
+                                </button>
+                                <button
+                                  onClick={() => setEditingComment(null)}
+                                  className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="text-sm text-gray-300 flex-1">{comment}</p>
+                                <button
+                                  onClick={() => setEditingComment({ youtubeId: item.youtubeId, index, text: comment })}
+                                  className="p-1 text-gray-500 hover:text-blue-400 transition-colors"
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteComment(item.youtubeId, index)}
+                                  className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </>
+                            )}
                           </div>
                         ))}
                       </div>

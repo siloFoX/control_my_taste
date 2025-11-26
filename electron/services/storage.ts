@@ -11,6 +11,7 @@ const DATA_DIR = path.join(__dirname, '../../../data');
 const MUSIC_FILE = path.join(DATA_DIR, 'music.json');
 const BLACKLIST_FILE = path.join(DATA_DIR, 'blacklist.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const TEMPLATES_FILE = path.join(DATA_DIR, 'templates.json');
 
 export interface Settings {
   keepUnlikedVideos: boolean | null; // null = 아직 선택 안함, true = 남기기, false = 삭제
@@ -167,4 +168,45 @@ export function keepItem(musicData: MusicData, youtubeId: string): MusicData {
       item.youtubeId === youtubeId ? { ...item, synced: true } : item
     ),
   };
+}
+
+// 검색 템플릿
+export type ConditionType = 'rating' | 'channel' | 'keyword' | 'comment' | 'tag' | 'hasComment' | 'hypeUp' | 'hypeDown';
+
+export interface SearchCondition {
+  type: ConditionType;
+  value: string;
+}
+
+export interface SearchTemplate {
+  id: string;
+  name: string;
+  includeConditions: SearchCondition[];
+  excludeConditions: SearchCondition[];
+  createdAt: string;
+}
+
+export function loadTemplates(): SearchTemplate[] {
+  ensureDataDir();
+  if (fs.existsSync(TEMPLATES_FILE)) {
+    return JSON.parse(fs.readFileSync(TEMPLATES_FILE, 'utf8'));
+  }
+  return [];
+}
+
+export function saveTemplates(templates: SearchTemplate[]): void {
+  ensureDataDir();
+  fs.writeFileSync(TEMPLATES_FILE, JSON.stringify(templates, null, 2));
+}
+
+export function addTemplate(template: SearchTemplate): void {
+  const templates = loadTemplates();
+  templates.push(template);
+  saveTemplates(templates);
+}
+
+export function deleteTemplate(templateId: string): void {
+  const templates = loadTemplates();
+  const filtered = templates.filter(t => t.id !== templateId);
+  saveTemplates(filtered);
 }
