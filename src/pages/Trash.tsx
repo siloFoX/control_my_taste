@@ -1,4 +1,4 @@
-import { RotateCcw, ExternalLink } from 'lucide-react'
+import { RotateCcw, ExternalLink, ImageOff } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { BlacklistItem } from '../types/electron'
 import ConfirmModal from '../components/ConfirmModal'
@@ -75,12 +75,21 @@ function Trash() {
                 className="flex items-center gap-4 p-4 bg-gray-800 rounded-lg"
               >
                 {/* 썸네일 */}
-                <img
-                  src={item.thumbnailUrl || 'https://via.placeholder.com/120x90?text=No+Image'}
-                  alt={item.title}
-                  className="w-24 h-16 object-cover rounded cursor-pointer flex-shrink-0"
-                  onClick={() => openYoutube(item.youtubeId)}
-                />
+                {item.thumbnailUrl ? (
+                  <img
+                    src={item.thumbnailUrl}
+                    alt={item.title || 'No title'}
+                    className="w-24 h-16 object-cover rounded cursor-pointer flex-shrink-0"
+                    onClick={() => openYoutube(item.youtubeId)}
+                  />
+                ) : (
+                  <div
+                    className="w-24 h-16 bg-gray-700 rounded cursor-pointer flex-shrink-0 flex items-center justify-center"
+                    onClick={() => openYoutube(item.youtubeId)}
+                  >
+                    <ImageOff size={24} className="text-gray-500" />
+                  </div>
+                )}
 
                 {/* 정보 */}
                 <div className="flex-1 min-w-0">
@@ -88,9 +97,11 @@ function Trash() {
                     className="font-medium truncate cursor-pointer hover:text-blue-400"
                     onClick={() => openYoutube(item.youtubeId)}
                   >
-                    {item.title || item.youtubeId}
+                    {item.title || `ID: ${item.youtubeId}`}
                   </h3>
-                  <p className="text-sm text-gray-400 truncate">{item.channelTitle}</p>
+                  {item.channelTitle && (
+                    <p className="text-sm text-gray-400 truncate">{item.channelTitle}</p>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
                     삭제일: {formatDate(item.deletedAt)}
                   </p>

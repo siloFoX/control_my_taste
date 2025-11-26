@@ -25,6 +25,8 @@ Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 - [x] 커스텀 모달 (ConfirmModal, AlertModal) - 네이티브 confirm/alert 대체
 - [x] 페이지 상태 localStorage 저장 (음악 목록 페이지/검색어, 평가하기 현재 항목)
 - [x] Hype Up/Down 기능 (좋아요/싫어요 무제한 클릭)
+- [x] UI 개선: 스크롤바 자동 숨김, 메뉴바 자동 숨김 (Alt로 토글)
+- [x] 휴지통 썸네일/제목 없음 예외처리 개선
 
 ### 다음 작업 (TODO)
 - [ ] UI/UX 개선 (피드백 반영)

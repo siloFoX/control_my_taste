@@ -166,9 +166,6 @@ function Evaluate() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-2">음악 평가</h2>
-      <p className="text-gray-400 mb-8">남은 항목: {items.length}개</p>
-
       {/* 썸네일 */}
       <div className="relative mb-6 group">
         <img
