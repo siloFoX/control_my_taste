@@ -137,3 +137,31 @@ ipcMain.handle('blacklist:restore', async (_event, youtubeId: string) => {
     return { success: false, error: String(error) };
   }
 });
+
+ipcMain.handle('music:addComment', async (_event, youtubeId: string, comment: string) => {
+  try {
+    const musicData = loadMusicData();
+    const item = musicData.items.find(v => v.youtubeId === youtubeId);
+    if (item) {
+      item.comments.push(comment);
+      saveMusicData(musicData);
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('music:deleteComment', async (_event, youtubeId: string, commentIndex: number) => {
+  try {
+    const musicData = loadMusicData();
+    const item = musicData.items.find(v => v.youtubeId === youtubeId);
+    if (item && item.comments[commentIndex] !== undefined) {
+      item.comments.splice(commentIndex, 1);
+      saveMusicData(musicData);
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});

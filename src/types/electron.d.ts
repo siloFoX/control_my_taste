@@ -35,6 +35,8 @@ declare global {
       deleteMusic: (youtubeId: string) => Promise<APIResponse>;
       loadBlacklist: () => Promise<APIResponse<BlacklistItem[]>>;
       restoreFromBlacklist: (youtubeId: string) => Promise<APIResponse>;
+      addComment: (youtubeId: string, comment: string) => Promise<APIResponse>;
+      deleteComment: (youtubeId: string, commentIndex: number) => Promise<APIResponse>;
     };
   }
 }

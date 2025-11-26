@@ -1,4 +1,4 @@
-import { Search, Star, Trash2, ExternalLink } from 'lucide-react'
+import { Search, Star, Trash2, ExternalLink, MessageSquare, X, Plus } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { VideoItem } from '../types/electron'
 
@@ -6,6 +6,8 @@ function MusicList() {
   const [items, setItems] = useState<VideoItem[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
+  const [expandedItem, setExpandedItem] = useState<string | null>(null)
+  const [newComment, setNewComment] = useState('')
 
   const loadData = async () => {
     try {
@@ -38,6 +40,31 @@ function MusicList() {
     if (result.success) {
       setItems(items.map(item =>
         item.youtubeId === youtubeId ? { ...item, rating } : item
+      ))
+    }
+  }
+
+  const handleAddComment = async (youtubeId: string) => {
+    if (!newComment.trim()) return
+
+    const result = await window.electronAPI.addComment(youtubeId, newComment.trim())
+    if (result.success) {
+      setItems(items.map(item =>
+        item.youtubeId === youtubeId
+          ? { ...item, comments: [...item.comments, newComment.trim()] }
+          : item
+      ))
+      setNewComment('')
+    }
+  }
+
+  const handleDeleteComment = async (youtubeId: string, commentIndex: number) => {
+    const result = await window.electronAPI.deleteComment(youtubeId, commentIndex)
+    if (result.success) {
+      setItems(items.map(item =>
+        item.youtubeId === youtubeId
+          ? { ...item, comments: item.comments.filter((_, i) => i !== commentIndex) }
+          : item
       ))
     }
   }
@@ -86,67 +113,128 @@ function MusicList() {
           {filteredItems.map((item) => (
             <div
               key={item.youtubeId}
-              className="flex items-center gap-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors"
+              className="bg-gray-800 rounded-lg overflow-hidden"
             >
-              {/* 썸네일 */}
-              <img
-                src={item.thumbnailUrl || 'https://via.placeholder.com/120x90?text=No+Image'}
-                alt={item.title}
-                className="w-30 h-20 object-cover rounded cursor-pointer"
-                onClick={() => openYoutube(item.youtubeId)}
-              />
-
-              {/* 정보 */}
-              <div className="flex-1 min-w-0">
-                <h3
-                  className="font-medium truncate cursor-pointer hover:text-blue-400"
+              <div className="flex items-center gap-4 p-4">
+                {/* 썸네일 */}
+                <img
+                  src={item.thumbnailUrl || 'https://via.placeholder.com/120x90?text=No+Image'}
+                  alt={item.title}
+                  className="w-30 h-20 object-cover rounded cursor-pointer"
                   onClick={() => openYoutube(item.youtubeId)}
-                >
-                  {item.title}
-                </h3>
-                <p className="text-sm text-gray-400 truncate">{item.channelTitle}</p>
+                />
 
-                {/* 별점 */}
-                <div className="flex items-center gap-1 mt-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => handleRating(item.youtubeId, star)}
-                      className="focus:outline-none"
-                    >
-                      <Star
-                        size={18}
-                        className={`${
-                          item.rating && item.rating >= star
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-600 hover:text-yellow-400'
-                        } transition-colors`}
-                      />
-                    </button>
-                  ))}
-                  {item.rating && (
-                    <span className="ml-2 text-sm text-gray-400">{item.rating}/5</span>
-                  )}
+                {/* 정보 */}
+                <div className="flex-1 min-w-0">
+                  <h3
+                    className="font-medium truncate cursor-pointer hover:text-blue-400"
+                    onClick={() => openYoutube(item.youtubeId)}
+                  >
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-gray-400 truncate">{item.channelTitle}</p>
+
+                  {/* 별점 */}
+                  <div className="flex items-center gap-1 mt-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => handleRating(item.youtubeId, star)}
+                        className="focus:outline-none"
+                      >
+                        <Star
+                          size={18}
+                          className={`${
+                            item.rating && item.rating >= star
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-600 hover:text-yellow-400'
+                          } transition-colors`}
+                        />
+                      </button>
+                    ))}
+                    {item.rating && (
+                      <span className="ml-2 text-sm text-gray-400">{item.rating}/5</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 액션 버튼 */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setExpandedItem(expandedItem === item.youtubeId ? null : item.youtubeId)}
+                    className={`p-2 transition-colors ${
+                      expandedItem === item.youtubeId || item.comments.length > 0
+                        ? 'text-blue-400'
+                        : 'text-gray-400 hover:text-blue-400'
+                    }`}
+                    title="코멘트"
+                  >
+                    <MessageSquare size={20} />
+                    {item.comments.length > 0 && (
+                      <span className="ml-1 text-xs">{item.comments.length}</span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => openYoutube(item.youtubeId)}
+                    className="p-2 text-gray-400 hover:text-blue-400 transition-colors"
+                    title="YouTube에서 열기"
+                  >
+                    <ExternalLink size={20} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.youtubeId)}
+                    className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                    title="삭제"
+                  >
+                    <Trash2 size={20} />
+                  </button>
                 </div>
               </div>
 
-              {/* 액션 버튼 */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => openYoutube(item.youtubeId)}
-                  className="p-2 text-gray-400 hover:text-blue-400 transition-colors"
-                  title="YouTube에서 열기"
-                >
-                  <ExternalLink size={20} />
-                </button>
-                <button
-                  onClick={() => handleDelete(item.youtubeId)}
-                  className="p-2 text-gray-400 hover:text-red-400 transition-colors"
-                  title="삭제"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
+              {/* 코멘트 섹션 */}
+              {expandedItem === item.youtubeId && (
+                <div className="px-4 pb-4 border-t border-gray-700">
+                  <div className="pt-4">
+                    {/* 코멘트 목록 */}
+                    {item.comments.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {item.comments.map((comment, index) => (
+                          <div
+                            key={index}
+                            className="flex items-start justify-between gap-2 p-2 bg-gray-700/50 rounded"
+                          >
+                            <p className="text-sm text-gray-300 flex-1">{comment}</p>
+                            <button
+                              onClick={() => handleDeleteComment(item.youtubeId, index)}
+                              className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 코멘트 입력 */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="코멘트 추가..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(item.youtubeId)}
+                        className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500 text-sm"
+                      />
+                      <button
+                        onClick={() => handleAddComment(item.youtubeId)}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

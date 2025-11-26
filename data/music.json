@@ -118,7 +118,10 @@
       "channelTitle": "Larry Carlton - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/79Q-SmsLi8o/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:47.938Z",
-      "comments": []
+      "comments": [
+        "fusion"
+      ],
+      "rating": 4
     },
     {
       "id": "uWhNjurBcU4",
@@ -226,7 +229,9 @@
       "channelTitle": "Bob and Doug McKenzie - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/QL0120iJhrA/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:47.938Z",
-      "comments": [],
+      "comments": [
+        "dirty"
+      ],
       "rating": 2
     },
     {
@@ -245,7 +250,11 @@
       "channelTitle": "TOTO - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/SGtVZgCYVgk/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:47.938Z",
-      "comments": []
+      "comments": [
+        "rock",
+        "feels good"
+      ],
+      "rating": 5
     },
     {
       "id": "z6Y4_jigI-4",
@@ -732,7 +741,10 @@
       "channelTitle": "The Beatles - Topic",
       "thumbnailUrl": "https://i.ytimg.com/vi/uNv_Bu_L6C8/mqdefault.jpg",
       "addedAt": "2025-11-26T00:56:48.504Z",
-      "comments": []
+      "comments": [
+        "cozy"
+      ],
+      "rating": 4
     },
     {
       "id": "YSGHER4BWME",

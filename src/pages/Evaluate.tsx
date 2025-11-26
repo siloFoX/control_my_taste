@@ -6,6 +6,7 @@ function Evaluate() {
   const [items, setItems] = useState<VideoItem[]>([])
   const [currentItem, setCurrentItem] = useState<VideoItem | null>(null)
   const [loading, setLoading] = useState(true)
+  const [comment, setComment] = useState('')
 
   const loadData = async () => {
     try {
@@ -30,6 +31,7 @@ function Evaluate() {
     }
     const randomIndex = Math.floor(Math.random() * list.length)
     setCurrentItem(list[randomIndex])
+    setComment('')
   }
 
   useEffect(() => {
@@ -38,6 +40,11 @@ function Evaluate() {
 
   const handleRating = async (rating: number) => {
     if (!currentItem) return
+
+    // 코멘트가 있으면 먼저 저장
+    if (comment.trim()) {
+      await window.electronAPI.addComment(currentItem.youtubeId, comment.trim())
+    }
 
     const result = await window.electronAPI.updateRating(currentItem.youtubeId, rating)
     if (result.success) {
@@ -112,7 +119,16 @@ function Evaluate() {
 
       {/* 제목 & 채널 */}
       <h3 className="text-xl font-medium text-center mb-2 px-4">{currentItem.title}</h3>
-      <p className="text-gray-400 mb-8">{currentItem.channelTitle}</p>
+      <p className="text-gray-400 mb-6">{currentItem.channelTitle}</p>
+
+      {/* 코멘트 입력 */}
+      <input
+        type="text"
+        placeholder="코멘트 (선택사항)..."
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        className="w-full max-w-md px-4 py-2 mb-6 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 text-center"
+      />
 
       {/* 별점 */}
       <div className="flex items-center gap-4 mb-8">

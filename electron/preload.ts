@@ -17,4 +17,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadBlacklist: () => ipcRenderer.invoke('blacklist:load'),
   restoreFromBlacklist: (youtubeId: string) =>
     ipcRenderer.invoke('blacklist:restore', youtubeId),
+
+  // 코멘트
+  addComment: (youtubeId: string, comment: string) =>
+    ipcRenderer.invoke('music:addComment', youtubeId, comment),
+  deleteComment: (youtubeId: string, commentIndex: number) =>
+    ipcRenderer.invoke('music:deleteComment', youtubeId, commentIndex),
 });
