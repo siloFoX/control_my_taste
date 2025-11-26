@@ -4,10 +4,14 @@ export interface VideoItem {
   title: string;
   channelTitle: string;
   thumbnailUrl: string;
-  addedAt: string;
+  addedAt: string; // 좋아요 누른 시간
   rating?: number;
   comments: string[];
   synced: boolean; // YouTube 좋아요 목록과 동기화 여부
+  // 추가 상세 정보 (videos.list에서 조회)
+  tags?: string[];
+  duration?: string; // ISO 8601 형식 (PT5M47S)
+  topics?: string[]; // Wikipedia URL 형식
 }
 
 export interface MusicData {

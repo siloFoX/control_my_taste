@@ -20,6 +20,9 @@ export interface VideoItem {
   rating?: number;
   comments: string[];
   synced: boolean;
+  tags?: string[];
+  duration?: string;
+  topics?: string[];
 }
 
 function getOAuth2Client() {
@@ -40,6 +43,7 @@ function getOAuth2Client() {
   return oauth2Client;
 }
 
+// playlistItems.list로 좋아요 목록 전체 가져오기 (999개 제한 없음)
 export async function fetchAllLikedVideos(): Promise<VideoItem[]> {
   const auth = getOAuth2Client();
   const youtube = google.youtube({ version: 'v3', auth });
@@ -48,24 +52,25 @@ export async function fetchAllLikedVideos(): Promise<VideoItem[]> {
   let pageToken: string | undefined;
 
   do {
-    const response = await youtube.videos.list({
+    const response = await youtube.playlistItems.list({
       part: ['snippet', 'contentDetails'],
-      myRating: 'like',
-      maxResults: 50, // API 최대값
+      playlistId: 'LL', // Liked List
+      maxResults: 50,
       pageToken,
     });
 
-    const videos = response.data.items || [];
+    const items = response.data.items || [];
 
-    for (const video of videos) {
-      if (video.id && video.snippet) {
+    for (const item of items) {
+      const videoId = item.snippet?.resourceId?.videoId;
+      if (videoId && item.snippet) {
         allVideos.push({
-          id: video.id,
-          youtubeId: video.id,
-          title: video.snippet.title || 'Unknown',
-          channelTitle: video.snippet.channelTitle || 'Unknown',
-          thumbnailUrl: video.snippet.thumbnails?.medium?.url || '',
-          addedAt: new Date().toISOString(),
+          id: videoId,
+          youtubeId: videoId,
+          title: item.snippet.title || 'Unknown',
+          channelTitle: item.snippet.videoOwnerChannelTitle || 'Unknown',
+          thumbnailUrl: item.snippet.thumbnails?.medium?.url || '',
+          addedAt: item.snippet.publishedAt || new Date().toISOString(), // 좋아요 누른 시간
           comments: [],
           synced: true,
         });
@@ -73,9 +78,41 @@ export async function fetchAllLikedVideos(): Promise<VideoItem[]> {
     }
 
     pageToken = response.data.nextPageToken || undefined;
-  } while (pageToken); // 제한 없이 모든 페이지 가져오기
+  } while (pageToken);
 
   return allVideos;
+}
+
+// videoId 목록으로 상세 정보 조회 (tags, duration, topics)
+export async function fetchVideoDetails(videoIds: string[]): Promise<Map<string, { tags?: string[]; duration?: string; topics?: string[] }>> {
+  const auth = getOAuth2Client();
+  const youtube = google.youtube({ version: 'v3', auth });
+
+  const detailsMap = new Map<string, { tags?: string[]; duration?: string; topics?: string[] }>();
+
+  // 50개씩 나눠서 조회
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const chunk = videoIds.slice(i, i + 50);
+
+    const response = await youtube.videos.list({
+      part: ['snippet', 'contentDetails', 'topicDetails'],
+      id: chunk,
+    });
+
+    const videos = response.data.items || [];
+
+    for (const video of videos) {
+      if (video.id) {
+        detailsMap.set(video.id, {
+          tags: video.snippet?.tags || undefined,
+          duration: video.contentDetails?.duration || undefined,
+          topics: video.topicDetails?.topicCategories || undefined,
+        });
+      }
+    }
+  }
+
+  return detailsMap;
 }
 
 export function isAuthenticated(): boolean {

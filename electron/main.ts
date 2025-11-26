@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { fetchAllLikedVideos, isAuthenticated } from './services/youtube.js';
+import { fetchAllLikedVideos, fetchVideoDetails, isAuthenticated } from './services/youtube.js';
 import { loadMusicData, saveMusicData, loadBlacklist, saveBlacklist, addToBlacklist, mergeVideos, loadSettings, saveSettings, deleteAllUnsynced, keepItem } from './services/storage.js';
 import type { Settings } from './services/storage.js';
 
@@ -70,6 +70,23 @@ ipcMain.handle('youtube:sync', async () => {
 
     // 동기화: unsynced 항목 감지 (synced: false로 표시)
     const result = mergeVideos(musicData.items, newVideos, blacklist);
+
+    // 상세 정보가 없는 항목들 찾기 (새로 추가된 항목 + 기존 항목 중 상세 정보 없는 것)
+    const itemsNeedingDetails = result.items.filter(item => !item.duration);
+    if (itemsNeedingDetails.length > 0) {
+      const videoIds = itemsNeedingDetails.map(item => item.youtubeId);
+      const detailsMap = await fetchVideoDetails(videoIds);
+
+      // 상세 정보 병합
+      for (const item of result.items) {
+        const details = detailsMap.get(item.youtubeId);
+        if (details) {
+          item.tags = details.tags;
+          item.duration = details.duration;
+          item.topics = details.topics;
+        }
+      }
+    }
 
     const updatedData = {
       items: result.items,
