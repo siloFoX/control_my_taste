@@ -31,3 +31,6 @@ Thumbs.db
 
 # Data files (선택적으로 제외할 수 있음)
 data/
+
+# test files
+test-youtube-api.cjs
