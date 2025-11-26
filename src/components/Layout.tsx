@@ -1,12 +1,38 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { Music, Star, Trash2, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
 
-function Layout() {
+interface LayoutProps {
+  onSync?: () => void
+}
+
+function Layout({ onSync }: LayoutProps) {
+  const [syncing, setSyncing] = useState(false)
+
   const navItems = [
     { to: '/', icon: Music, label: '음악 목록' },
     { to: '/evaluate', icon: Star, label: '평가하기' },
     { to: '/trash', icon: Trash2, label: '휴지통' },
   ]
+
+  const handleSync = async () => {
+    if (syncing) return
+
+    setSyncing(true)
+    try {
+      const result = await window.electronAPI.syncYoutube()
+      if (result.success) {
+        onSync?.()
+        alert(`동기화 완료! ${result.data?.items.length || 0}개 항목`)
+      } else {
+        alert('동기화 실패: ' + result.error)
+      }
+    } catch (error) {
+      alert('동기화 중 오류 발생: ' + error)
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -37,9 +63,17 @@ function Layout() {
         </nav>
 
         {/* 동기화 버튼 */}
-        <button className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors mt-4">
-          <RefreshCw size={20} />
-          YouTube 동기화
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors mt-4 ${
+            syncing
+              ? 'bg-gray-600 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700'
+          }`}
+        >
+          <RefreshCw size={20} className={syncing ? 'animate-spin' : ''} />
+          {syncing ? '동기화 중...' : 'YouTube 동기화'}
         </button>
       </aside>
 

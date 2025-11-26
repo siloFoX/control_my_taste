@@ -1,6 +1,8 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { fetchLikedVideos, isAuthenticated } from './services/youtube.js';
+import { loadMusicData, saveMusicData, loadBlacklist, addToBlacklist, mergeVideos } from './services/storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,5 +53,67 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  }
+});
+
+// IPC Handlers
+ipcMain.handle('youtube:sync', async () => {
+  try {
+    if (!isAuthenticated()) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const newVideos = await fetchLikedVideos(100);
+    const musicData = loadMusicData();
+    const blacklist = loadBlacklist();
+
+    const mergedItems = mergeVideos(musicData.items, newVideos, blacklist);
+
+    const updatedData = {
+      items: mergedItems,
+      lastSync: new Date().toISOString(),
+    };
+
+    saveMusicData(updatedData);
+
+    return { success: true, data: updatedData };
+  } catch (error) {
+    console.error('Sync error:', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('music:load', async () => {
+  try {
+    const data = loadMusicData();
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('music:updateRating', async (_event, youtubeId: string, rating: number) => {
+  try {
+    const musicData = loadMusicData();
+    const item = musicData.items.find(v => v.youtubeId === youtubeId);
+    if (item) {
+      item.rating = rating;
+      saveMusicData(musicData);
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('music:delete', async (_event, youtubeId: string) => {
+  try {
+    const musicData = loadMusicData();
+    musicData.items = musicData.items.filter(v => v.youtubeId !== youtubeId);
+    saveMusicData(musicData);
+    addToBlacklist(youtubeId);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
   }
 });

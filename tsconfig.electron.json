@@ -13,5 +13,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["electron/main.ts"]
+  "include": ["electron/main.ts", "electron/services/**/*.ts"]
 }

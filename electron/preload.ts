@@ -1,6 +1,15 @@
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // 나중에 IPC 통신용 메서드 추가
   platform: process.platform,
+
+  // YouTube 동기화
+  syncYoutube: () => ipcRenderer.invoke('youtube:sync'),
+
+  // 음악 데이터
+  loadMusic: () => ipcRenderer.invoke('music:load'),
+  updateRating: (youtubeId: string, rating: number) =>
+    ipcRenderer.invoke('music:updateRating', youtubeId, rating),
+  deleteMusic: (youtubeId: string) =>
+    ipcRenderer.invoke('music:delete', youtubeId),
 });
