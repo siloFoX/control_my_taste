@@ -4,23 +4,25 @@
 
 Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 
-## 현재 진행 상황 (2025-11-25)
+## 현재 진행 상황 (2025-11-26)
 
 ### 완료된 작업
 - [x] 프로젝트 기본 구조 설정 (Electron + React + TypeScript + Vite)
 - [x] Tailwind CSS 설정
 - [x] 기본 UI 레이아웃 구현 (사이드바 + 메인 컨텐츠)
 - [x] 라우팅 설정 (/, /evaluate, /trash)
-- [x] 페이지 컴포넌트 생성 (MusicList, Evaluate, Trash)
-- [x] ES Module 호환성 문제 해결 (package.json에 "type": "module" 추가)
-- [x] Electron preload 스크립트 CommonJS 분리 빌드 설정
+- [x] ES Module 호환성 문제 해결
+- [x] YouTube Data API 연동 (OAuth 인증)
+- [x] 음악 목록 동기화 기능 구현
+- [x] 음악 목록 페이지 (썸네일, 별점, 검색, 삭제, 코멘트)
+- [x] 평가하기 페이지 (랜덤 선택, 별점 + 코멘트)
+- [x] 휴지통 페이지 (블랙리스트 확인/복구)
+- [x] 데이터 저장/로드 (JSON 파일)
+- [x] 블랙리스트 기능 (삭제 시 재동기화 제외)
 
 ### 다음 작업 (TODO)
-- [ ] YouTube Data API 연동 (OAuth 인증)
-- [ ] 음악 목록 동기화 기능 구현
-- [ ] 평가 기능 구현 (별점 + 코멘트)
-- [ ] 데이터 저장/로드 (JSON 파일)
-- [ ] 블랙리스트 기능 구현
+- [ ] UI/UX 개선 (피드백 반영)
+- [ ] 프로덕션 빌드 테스트
 
 ## 기술 스택
 
@@ -30,7 +32,8 @@ Control My Taste - YouTube 좋아요 목록 기반 개인 음악 평가 앱
 - React Router DOM v6
 - Lucide React (아이콘)
 - YouTube Data API v3
-- 데이터: JSON 파일 저장
+- googleapis (Node.js 라이브러리)
+- 데이터: JSON 파일 저장 (data/music.json, data/blacklist.json)
 
 ## 주요 명령어
 
@@ -48,43 +51,69 @@ npm run build        # 프로덕션 빌드
 ```
 control_my_taste/
 ├── electron/
-│   ├── main.ts           # Electron 메인 프로세스 (ES Module)
-│   └── preload.ts        # Preload 스크립트 (CommonJS로 빌드됨)
+│   ├── main.ts              # Electron 메인 프로세스 + IPC 핸들러
+│   ├── preload.ts           # Preload 스크립트 (CommonJS로 빌드)
+│   └── services/
+│       ├── youtube.ts       # YouTube API 서비스
+│       └── storage.ts       # JSON 파일 저장/로드
 ├── src/
-│   ├── main.tsx          # React 엔트리포인트
-│   ├── App.tsx           # 라우팅 설정
+│   ├── main.tsx             # React 엔트리포인트
+│   ├── App.tsx              # 라우팅 설정
 │   ├── components/
-│   │   └── Layout.tsx    # 사이드바 + 메인 레이아웃
-│   └── pages/
-│       ├── MusicList.tsx # 음악 목록 페이지 (메인)
-│       ├── Evaluate.tsx  # 평가 페이지
-│       └── Trash.tsx     # 휴지통 페이지
-├── dist/electron/        # Electron 빌드 출력
-├── tsconfig.json         # React용 TypeScript 설정
-├── tsconfig.electron.json # Electron main용 (ES Module)
-├── tsconfig.preload.json # Preload용 (CommonJS)
-├── vite.config.ts
-├── tailwind.config.js
-└── postcss.config.js
+│   │   └── Layout.tsx       # 사이드바 + 동기화 버튼
+│   ├── pages/
+│   │   ├── MusicList.tsx    # 음악 목록 (검색, 별점, 코멘트, 삭제)
+│   │   ├── Evaluate.tsx     # 랜덤 평가 (별점 + 코멘트)
+│   │   └── Trash.tsx        # 휴지통 (복구)
+│   └── types/
+│       └── electron.d.ts    # IPC API 타입 정의
+├── data/
+│   ├── music.json           # 음악 데이터
+│   └── blacklist.json       # 블랙리스트
+├── credentials.json         # YouTube OAuth (gitignore)
+├── token.json               # 인증 토큰 (gitignore)
+├── tsconfig.json            # React용
+├── tsconfig.electron.json   # Electron main용 (ES Module)
+└── tsconfig.preload.json    # Preload용 (CommonJS)
 ```
 
 ## 핵심 기능
 
-1. **YouTube 동기화**: 앱 시작 시 + 수동 버튼
-2. **평가 페이지**: 랜덤 음악 선정 → 별점(1-5) + 코멘트(선택)
-3. **블랙리스트**: 삭제된 항목은 동기화 시 제외
+1. **YouTube 동기화**: 좋아요 목록에서 최대 100개 가져오기
+2. **음악 목록**: 썸네일, 제목, 채널명, 별점, 코멘트, 검색, 삭제
+3. **평가하기**: 미평가 음악 랜덤 선택 → 별점(1-5) + 코멘트(선택)
+4. **휴지통**: 삭제된 항목 확인/복구 (블랙리스트)
+
+## IPC API
+
+```typescript
+// YouTube
+syncYoutube()                    // 동기화
+
+// Music
+loadMusic()                      // 목록 로드
+updateRating(youtubeId, rating)  // 별점 저장
+deleteMusic(youtubeId)           // 삭제 + 블랙리스트 등록
+addComment(youtubeId, comment)   // 코멘트 추가
+deleteComment(youtubeId, index)  // 코멘트 삭제
+
+// Blacklist
+loadBlacklist()                  // 블랙리스트 로드
+restoreFromBlacklist(youtubeId)  // 복구
+```
 
 ## 데이터 스키마
 
 ```typescript
-interface Music {
+interface VideoItem {
   id: string;
   youtubeId: string;
   title: string;
-  artist?: string;
-  rating?: number;      // 1-5
-  comments: Comment[];
+  channelTitle: string;
+  thumbnailUrl: string;
   addedAt: string;
+  rating?: number;      // 1-5
+  comments: string[];
 }
 
 interface BlacklistItem {
@@ -107,8 +136,9 @@ Cannot use import statement outside a module
 ```
 → `tsconfig.preload.json` 분리하여 CommonJS로 빌드하도록 설정 완료.
 
-### React Router 경고
-v7 업그레이드 관련 경고 → 나중에 처리해도 됨.
+### 경로 주의 (빌드 후)
+- `electron/services/` 파일들은 빌드 후 `dist/electron/services/`에 위치
+- 상대 경로 사용 시 `../../../` 로 프로젝트 루트 접근
 
 ## 주의사항
 
